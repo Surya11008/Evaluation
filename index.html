@@ -398,6 +398,7 @@
         let scheduleData = [];
         let subjectData = [];
         let selectedSubjects = [];
+        let duplicateScheduleData = null;
         let isAdmin = false;
         let currentView = 'table';
         let currentTab = 'schedule';
@@ -947,6 +948,9 @@
                     <button data-action="postpone-all" data-id="${escapeHtml(item.id)}" class="p-1.5 text-amber-700 hover:text-amber-900 hover:bg-amber-50 rounded-lg transition" title="Postpone all subjects in this schedule">
                         <i class="fa-regular fa-calendar-plus text-xs"></i>
                     </button>
+                    <button data-action="duplicate" data-id="${escapeHtml(item.id)}" class="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition" title="Duplicate schedule">
+                        <i class="fa-regular fa-copy text-xs"></i>
+                    </button>
                     <button data-action="edit" data-id="${escapeHtml(item.id)}" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Edit">
                         <i class="fa-solid fa-pen text-xs"></i>
                     </button>
@@ -1002,6 +1006,7 @@
                     const button = event.target.closest('button[data-action]');
                     if (!button) return;
                     if (button.dataset.action === 'edit') window.openEditModal(button.dataset.id);
+                    if (button.dataset.action === 'duplicate') window.openDuplicateModal(button.dataset.id);
                     if (button.dataset.action === 'delete') window.deleteRecord(button.dataset.id);
                     if (button.dataset.action === 'postpone-all') window.openPostponeModal(button.dataset.id);
                     if (button.dataset.action === 'postpone-subject') window.openPostponeModal(button.dataset.id, button.dataset.subjectKey);
@@ -1215,6 +1220,7 @@
 
         window.openAddModal = function() {
             if (!requireAdmin()) return;
+            duplicateScheduleData = null;
             document.getElementById('modalTitle').innerText = 'Add Schedule';
             document.getElementById('editDocId').value = '';
             document.getElementById('modalName').value = '';
@@ -1229,6 +1235,7 @@
 
         window.openEditModal = function(id) {
             if (!requireAdmin()) return;
+            duplicateScheduleData = null;
             const record = scheduleData.find(item => item.id === id);
             if (!record) return;
             const schedule = normalizeSchedule(record);
@@ -1245,8 +1252,33 @@
             document.getElementById('scheduleModal').classList.remove('hidden');
         }
 
+        window.openDuplicateModal = function(id) {
+            if (!requireAdmin()) return;
+            const record = scheduleData.find(item => item.id === id);
+            if (!record) {
+                showToast('Schedule was not found. Refresh and try again.', 'error');
+                return;
+            }
+            const schedule = normalizeSchedule(record);
+            duplicateScheduleData = {
+                position: schedule.position,
+                subjectDates: schedule.subjectDates
+            };
+            document.getElementById('modalTitle').innerText = `Duplicate Schedule: ${schedule.name}`;
+            document.getElementById('editDocId').value = '';
+            document.getElementById('modalName').value = `${schedule.name} (Copy)`;
+            updatePositionOptions();
+            document.getElementById('modalPosition').value = schedule.position;
+            document.getElementById('modalDateFrom').value = schedule.dateFrom;
+            document.getElementById('modalDateTo').value = schedule.dateTo;
+            selectedSubjects = [...schedule.subjects];
+            renderSelectedSubjects();
+            document.getElementById('scheduleModal').classList.remove('hidden');
+        }
+
         window.closeModal = function() {
             document.getElementById('scheduleModal').classList.add('hidden');
+            duplicateScheduleData = null;
         }
 
         window.addSelectedSubject = function() {
@@ -1305,6 +1337,7 @@
             const docId = editId ? editId : `sched_${crypto.randomUUID()}`;
             const existing = scheduleData.find(item => item.id === docId);
             const previous = existing ? normalizeSchedule(existing) : null;
+            const source = duplicateScheduleData;
             const payload = {
                 ...(previous || {}),
                 id: docId,
@@ -1314,13 +1347,13 @@
                 dateTo,
                 subjects: [...selectedSubjects],
                 subjectStatus: previous?.subjectStatus || {},
-                subjectDates: previous?.subjectDates || {}
+                subjectDates: previous?.subjectDates || source?.subjectDates || {}
             };
 
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'schedules', docId);
                 await setDoc(docRef, payload);
-                showToast('Schedule saved successfully', 'success');
+                showToast(source ? 'Schedule duplicated successfully' : 'Schedule saved successfully', 'success');
                 closeModal();
             } catch (err) {
                 console.error("Save error:", err);
