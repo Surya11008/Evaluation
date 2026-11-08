@@ -1,5 +1,5 @@
-const CACHE_NAME = 'evaluation-shell-v6';
-const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
+const CACHE_NAME = 'evaluation-shell-v7';
+const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './social-card.png'];
 
 self.addEventListener('install', event => {
     event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));

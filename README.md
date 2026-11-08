@@ -22,5 +22,6 @@ With these rules, any Google account that signs in can read schedules. Email/Pas
 - Admins can add or rename Position and Type options in the schedule form. Renaming an option updates all schedules assigned to it.
 - The shared filters (name, subject, Position, Type, and week/date range) apply to both Schedule and Status & Rankings.
 - Admins can use the left/right arrows in either table header to reorder columns. The order syncs to all signed-in users through Firestore and requires publishing the `tableSettings` rule in [`firestore.rules`](./firestore.rules).
+- Shared links include Open Graph and Twitter preview metadata with the Evaluation logo.
 - Telugu text uses the Sree Krushnadevaraya font when the Google Fonts stylesheet is available.
 - Admins can duplicate a schedule from its row/card actions. The copy starts with “(Copy)” in its name, retains its Position, dates, subjects, and postponed dates, and resets completion progress.
