@@ -151,6 +151,17 @@
 
         <!-- Schedule Filters -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div class="sm:col-span-2 lg:col-span-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Week view</p>
+                    <p id="weekLabel" class="text-sm font-bold text-slate-800">This week</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="changeWeek(-1)" class="px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm" aria-label="Previous week"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button type="button" onclick="setCurrentWeek()" class="px-3 py-2 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold">This week</button>
+                    <button type="button" onclick="changeWeek(1)" class="px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm" aria-label="Next week"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </div>
             <label class="relative sm:col-span-2 lg:col-span-1">
                 <span class="sr-only">Search schedules by name</span>
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -189,7 +200,7 @@
                             <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">From</th>
                             <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">To</th>
                             <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">Subjects</th>
-                            <th class="py-3.5 px-3 bg-slate-100 text-center w-20">Actions</th>
+                            <th class="py-3.5 px-3 bg-slate-100 text-center w-32">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-200 text-sm">
@@ -294,6 +305,39 @@
         </div>
     </div>
 
+    <div id="postponeModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden">
+            <div class="bg-indigo-700 text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="postponeTitle" class="text-lg font-bold">Postpone schedule</h3>
+                <button type="button" onclick="closePostponeModal()" class="text-indigo-200 hover:text-white text-lg" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="savePostpone(event)" class="p-6 space-y-4">
+                <input type="hidden" id="postponeMode">
+                <input type="hidden" id="postponeScheduleId">
+                <input type="hidden" id="postponeSubjectKey">
+                <p id="postponeDescription" class="text-sm text-slate-600"></p>
+                <div id="postponeScheduleDates" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="postponeFrom" class="block text-xs font-semibold text-slate-700 uppercase mb-1">New from date</label>
+                        <input type="date" id="postponeFrom" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="postponeTo" class="block text-xs font-semibold text-slate-700 uppercase mb-1">New to date</label>
+                        <input type="date" id="postponeTo" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+                <div id="postponeSubjectDate" class="hidden">
+                    <label for="postponeDate" class="block text-xs font-semibold text-slate-700 uppercase mb-1">New subject date</label>
+                    <input type="date" id="postponeDate" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closePostponeModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl">Save postponement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Notification Toast -->
     <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-sm">
         <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
@@ -304,7 +348,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global Firebase handles
         let db, auth, currentUser;
@@ -313,6 +357,7 @@
         let selectedSubjects = [];
         let isAdmin = false;
         let currentView = 'table';
+        let weekOffset = 0;
         const appId = 'weekly-schedule-2026';
         const adminId = 'surya11008';
         const adminEmail = 'admin11008@gmail.com';
@@ -405,6 +450,7 @@
         // Initialize Firebase
         window.addEventListener('DOMContentLoaded', async () => {
             try {
+                setWeekRange(0);
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -609,14 +655,108 @@
                 dateTo: item.dateTo || '2026-11-13',
                 subjects: Array.isArray(item.subjects)
                     ? [...new Set(item.subjects.filter(subject => typeof subject === 'string' && subject.trim()).map(subject => subject.trim()))]
-                    : [...new Set(legacySubjects)]
+                    : [...new Set(legacySubjects)],
+                subjectStatus: item.subjectStatus && typeof item.subjectStatus === 'object' && !Array.isArray(item.subjectStatus)
+                    ? item.subjectStatus
+                    : {},
+                subjectDates: item.subjectDates && typeof item.subjectDates === 'object' && !Array.isArray(item.subjectDates)
+                    ? item.subjectDates
+                    : {}
             };
+        }
+
+        function subjectKey(subject) {
+            const binary = Array.from(new TextEncoder().encode(subject), byte => String.fromCharCode(byte)).join('');
+            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
         }
 
         function formatDate(date) {
             if (!date) return '—';
             const parsedDate = new Date(`${date}T00:00:00`);
             return Number.isNaN(parsedDate.getTime()) ? '—' : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(parsedDate);
+        }
+
+        function formatTimestamp(value) {
+            if (!value) return '';
+            let date;
+            if (typeof value.toDate === 'function') {
+                date = value.toDate();
+            } else if (typeof value === 'object' && typeof value.seconds === 'number') {
+                date = new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1000000);
+            } else {
+                date = new Date(value);
+            }
+            return Number.isNaN(date.getTime())
+                ? ''
+                : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+        }
+
+        function dateToISO(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function parseLocalDate(value) {
+            const [year, month, day] = value.split('-').map(Number);
+            return new Date(year, month - 1, day);
+        }
+
+        function shiftDate(value, days) {
+            const date = parseLocalDate(value);
+            date.setDate(date.getDate() + days);
+            return dateToISO(date);
+        }
+
+        function getWeekRange(offset = 0) {
+            const start = new Date();
+            start.setHours(0, 0, 0, 0);
+            start.setDate(start.getDate() - start.getDay() + offset * 7);
+            const end = new Date(start);
+            end.setDate(end.getDate() + 6);
+            return { from: dateToISO(start), to: dateToISO(end) };
+        }
+
+        function setWeekRange(offset) {
+            weekOffset = offset;
+            const range = getWeekRange(weekOffset);
+            document.getElementById('filterFrom').value = range.from;
+            document.getElementById('filterTo').value = range.to;
+            updateWeekLabel();
+            renderSchedule();
+        }
+
+        function updateWeekLabel() {
+            const from = document.getElementById('filterFrom').value;
+            const to = document.getElementById('filterTo').value;
+            const label = document.getElementById('weekLabel');
+            if (!from || !to) {
+                label.innerText = 'Custom date range';
+                return;
+            }
+            if (from === getWeekRange(0).from && to === getWeekRange(0).to) {
+                label.innerText = 'This week';
+                return;
+            }
+            const start = parseLocalDate(from);
+            const end = parseLocalDate(to);
+            const isWeek = start.getDay() === 0 && end.getDay() === 6
+                && Math.round((end - start) / 86400000) === 6;
+            label.innerText = isWeek ? `Week of ${formatDate(from)} – ${formatDate(to)}` : 'Custom date range';
+        }
+
+        window.changeWeek = function(amount) {
+            const from = document.getElementById('filterFrom').value || getWeekRange().from;
+            const to = document.getElementById('filterTo').value || getWeekRange().to;
+            const nextFrom = shiftDate(from, amount * 7);
+            document.getElementById('filterFrom').value = nextFrom;
+            document.getElementById('filterTo').value = shiftDate(to, amount * 7);
+            const currentFrom = getWeekRange().from;
+            weekOffset = Math.round((parseLocalDate(nextFrom) - parseLocalDate(currentFrom)) / 604800000);
+            updateWeekLabel();
+            renderSchedule();
+        }
+
+        window.setCurrentWeek = function() {
+            setWeekRange(0);
         }
 
         function updateSubjectOptions() {
@@ -641,6 +781,7 @@
         }
 
         window.filterData = function() {
+            updateWeekLabel();
             renderSchedule();
         }
 
@@ -656,9 +797,7 @@
         window.clearFilters = function() {
             document.getElementById('searchInput').value = '';
             document.getElementById('subjectFilter').value = '';
-            document.getElementById('filterFrom').value = '';
-            document.getElementById('filterTo').value = '';
-            renderSchedule();
+            setWeekRange(0);
         }
 
         function renderSchedule() {
@@ -670,12 +809,23 @@
             const filtered = scheduleData.map(normalizeSchedule).filter(item => {
                 const matchesSearch = item.name.toLowerCase().includes(search);
                 const matchesSubject = subject === '' || item.subjects.includes(subject);
-                const matchesFrom = filterFrom === '' || item.dateTo >= filterFrom;
-                const matchesTo = filterTo === '' || item.dateFrom <= filterTo;
-                return matchesSearch && matchesSubject && matchesFrom && matchesTo;
+                const inRange = date => (!filterFrom || date >= filterFrom) && (!filterTo || date <= filterTo);
+                const overlapsRange = from => (!filterTo || from <= filterTo) && (!filterFrom || item.dateTo >= filterFrom);
+                let matchesDate = overlapsRange(item.dateFrom);
+                if (subject) {
+                    const individualDate = item.subjectDates[subjectKey(subject)]?.date;
+                    if (individualDate) matchesDate = inRange(individualDate);
+                } else if (!matchesDate) {
+                    matchesDate = item.subjects.some(name => {
+                        const individualDate = item.subjectDates[subjectKey(name)]?.date;
+                        return individualDate && inRange(individualDate);
+                    });
+                }
+                return matchesSearch && matchesSubject && matchesDate;
             });
 
             document.getElementById('recordCount').innerText = `Showing ${filtered.length} of ${scheduleData.length}`;
+            updateWeekLabel();
 
             const tbody = document.getElementById('tableBody');
             const cardContainer = document.getElementById('cardViewContainer');
@@ -694,26 +844,47 @@
             let cardHtml = '';
 
             filtered.forEach(item => {
-                const subjectBadges = item.subjects.map(getSlotBadge).join(' ');
+                const subjectItems = item.subjects.map(subject => {
+                    const key = subjectKey(subject);
+                    const completion = item.subjectStatus[key];
+                    const completedAt = formatTimestamp(completion?.completedAt);
+                    const subjectDate = item.subjectDates[key];
+                    const subjectDateLabel = subjectDate?.date
+                        ? `<span class="text-xs text-amber-700"><i class="fa-regular fa-calendar-check mr-1"></i>Postponed to ${formatDate(subjectDate.date)}${formatTimestamp(subjectDate.postponedAt) ? ` · ${escapeHtml(formatTimestamp(subjectDate.postponedAt))}` : ''}</span>`
+                        : '';
+                    return `
+                        <div class="flex flex-col items-start gap-1.5 rounded-lg border border-slate-100 bg-white p-2">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <label class="inline-flex items-center gap-1.5 ${isAdmin ? 'cursor-pointer' : 'cursor-default'}">
+                                    <input type="checkbox" data-action="toggle-completion" data-id="${escapeHtml(item.id)}" data-subject-key="${escapeHtml(key)}" ${completion ? 'checked' : ''} ${isAdmin ? '' : 'disabled'} aria-label="Completed: ${escapeHtml(subject)}" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-100">
+                                    ${getSlotBadge(subject)}
+                                </label>
+                                ${isAdmin ? `<button type="button" data-action="postpone-subject" data-id="${escapeHtml(item.id)}" data-subject-key="${escapeHtml(key)}" class="text-xs font-semibold text-amber-700 hover:text-amber-900" title="Postpone this subject"><i class="fa-regular fa-calendar-plus"></i> Postpone</button>` : ''}
+                            </div>
+                            ${completedAt ? `<span class="text-xs text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i>Completed ${escapeHtml(completedAt)}</span>` : ''}
+                            ${subjectDateLabel}
+                        </div>`;
+                }).join('');
                 const actionButtons = isAdmin ? `
+                    <button data-action="postpone-all" data-id="${escapeHtml(item.id)}" class="p-1.5 text-amber-700 hover:text-amber-900 hover:bg-amber-50 rounded-lg transition" title="Postpone all subjects in this schedule">
+                        <i class="fa-regular fa-calendar-plus text-xs"></i>
+                    </button>
                     <button data-action="edit" data-id="${escapeHtml(item.id)}" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Edit">
                         <i class="fa-solid fa-pen text-xs"></i>
                     </button>
                     <button data-action="delete" data-id="${escapeHtml(item.id)}" class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Delete">
                         <i class="fa-solid fa-trash text-xs"></i>
                     </button>` : '';
+                const actionsCell = `<td class="py-3 px-2 text-center">
+                    <div class="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition">${actionButtons}</div>
+                </td>`;
                 tableHtml += `
                     <tr class="hover:bg-slate-50/80 transition group">
                         <td class="py-3 px-4 border-r border-slate-200 font-semibold text-slate-800">${escapeHtml(item.name)}</td>
                         <td class="py-3 px-4 border-r border-slate-200 text-sm">${formatDate(item.dateFrom)}</td>
                         <td class="py-3 px-4 border-r border-slate-200 text-sm">${formatDate(item.dateTo)}</td>
-                        <td class="py-3 px-4 border-r border-slate-200"><div class="flex flex-wrap gap-1.5">${subjectBadges || '<span class="text-slate-400 text-xs">No subjects</span>'}</div></td>
-                        ${isAdmin ? '<td class="py-3 px-2 text-center">' : ''}
-                        ${isAdmin ? `
-                            <div class="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition">
-                                ${actionButtons}
-                            </div>
-                        </td>` : ''}
+                        <td class="py-3 px-4 border-r border-slate-200"><div class="flex flex-col gap-2">${subjectItems || '<span class="text-slate-400 text-xs">No subjects</span>'}</div></td>
+                        ${actionsCell}
                     </tr>
                 `;
 
@@ -727,7 +898,7 @@
                         <div class="text-sm space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
                             <p><span class="font-semibold text-slate-500">From:</span> ${formatDate(item.dateFrom)}</p>
                             <p><span class="font-semibold text-slate-500">To:</span> ${formatDate(item.dateTo)}</p>
-                            <div class="flex flex-wrap gap-1.5 pt-1">${subjectBadges || '<span class="text-slate-400 text-xs">No subjects</span>'}</div>
+                            <div class="flex flex-col gap-2 pt-1">${subjectItems || '<span class="text-slate-400 text-xs">No subjects</span>'}</div>
                         </div>
                     </div>
                 `;
@@ -742,8 +913,128 @@
                     if (!button) return;
                     if (button.dataset.action === 'edit') window.openEditModal(button.dataset.id);
                     if (button.dataset.action === 'delete') window.deleteRecord(button.dataset.id);
+                    if (button.dataset.action === 'postpone-all') window.openPostponeModal(button.dataset.id);
+                    if (button.dataset.action === 'postpone-subject') window.openPostponeModal(button.dataset.id, button.dataset.subjectKey);
+                };
+                container.onchange = event => {
+                    const checkbox = event.target.closest('input[data-action="toggle-completion"]');
+                    if (checkbox) toggleSubjectCompletion(checkbox.dataset.id, checkbox.dataset.subjectKey, checkbox.checked);
                 };
             });
+        }
+
+        async function toggleSubjectCompletion(scheduleId, key, completed) {
+            if (!requireAdmin()) {
+                renderSchedule();
+                return;
+            }
+            const record = scheduleData.find(item => item.id === scheduleId);
+            if (!record) return;
+            const schedule = normalizeSchedule(record);
+            const subjectStatus = { ...schedule.subjectStatus };
+            if (completed) {
+                subjectStatus[key] = { completedAt: serverTimestamp() };
+            } else {
+                delete subjectStatus[key];
+            }
+            try {
+                await setDoc(
+                    doc(db, 'artifacts', appId, 'public', 'data', 'schedules', scheduleId),
+                    { subjectStatus },
+                    { merge: true }
+                );
+            } catch (error) {
+                console.error('Completion update error:', error);
+                renderSchedule();
+                showToast('Could not update subject completion', 'error');
+            }
+        }
+
+        window.openPostponeModal = function(scheduleId, key = '') {
+            if (!requireAdmin()) return;
+            const record = scheduleData.find(item => item.id === scheduleId);
+            if (!record) return;
+            const schedule = normalizeSchedule(record);
+            const individual = Boolean(key);
+            document.getElementById('postponeMode').value = individual ? 'subject' : 'schedule';
+            document.getElementById('postponeScheduleId').value = scheduleId;
+            document.getElementById('postponeSubjectKey').value = key;
+            document.getElementById('postponeScheduleDates').classList.toggle('hidden', individual);
+            document.getElementById('postponeSubjectDate').classList.toggle('hidden', !individual);
+            document.getElementById('postponeFrom').required = !individual;
+            document.getElementById('postponeTo').required = !individual;
+            document.getElementById('postponeDate').required = individual;
+            if (individual) {
+                const subject = schedule.subjects.find(name => subjectKey(name) === key);
+                if (!subject) return;
+                document.getElementById('postponeTitle').innerText = 'Postpone subject';
+                document.getElementById('postponeDescription').innerText = subject;
+                document.getElementById('postponeDate').value = shiftDate(schedule.subjectDates[key]?.date || schedule.dateFrom, 7);
+            } else {
+                document.getElementById('postponeTitle').innerText = 'Postpone all subjects';
+                document.getElementById('postponeDescription').innerText = `Move every subject in “${schedule.name}” to a later schedule date range.`;
+                document.getElementById('postponeFrom').value = shiftDate(schedule.dateFrom, 7);
+                document.getElementById('postponeTo').value = shiftDate(schedule.dateTo, 7);
+            }
+            document.getElementById('postponeModal').classList.remove('hidden');
+        }
+
+        window.closePostponeModal = function() {
+            document.getElementById('postponeModal').classList.add('hidden');
+        }
+
+        window.savePostpone = async function(event) {
+            event.preventDefault();
+            if (!requireAdmin()) return;
+            const scheduleId = document.getElementById('postponeScheduleId').value;
+            const record = scheduleData.find(item => item.id === scheduleId);
+            if (!record) {
+                showToast('Schedule was not found. Refresh and try again.', 'error');
+                return;
+            }
+            const schedule = normalizeSchedule(record);
+            const isIndividual = document.getElementById('postponeMode').value === 'subject';
+            const reference = doc(db, 'artifacts', appId, 'public', 'data', 'schedules', scheduleId);
+            try {
+                if (isIndividual) {
+                    const key = document.getElementById('postponeSubjectKey').value;
+                    const newDate = document.getElementById('postponeDate').value;
+                    const previousDate = schedule.subjectDates[key]?.date || schedule.dateFrom;
+                    if (!newDate || newDate <= previousDate) {
+                        showToast('Choose a date later than the subject’s current date.', 'error');
+                        return;
+                    }
+                    const subjectDates = {
+                        ...schedule.subjectDates,
+                        [key]: { date: newDate, postponedAt: serverTimestamp() }
+                    };
+                    await setDoc(reference, { ...schedule, subjectDates });
+                } else {
+                    const dateFrom = document.getElementById('postponeFrom').value;
+                    const dateTo = document.getElementById('postponeTo').value;
+                    if (!dateFrom || dateFrom <= schedule.dateFrom) {
+                        showToast('The new start date must be later than the current start date.', 'error');
+                        return;
+                    }
+                    if (dateFrom > dateTo) {
+                        showToast('The end date must be on or after the new start date.', 'error');
+                        return;
+                    }
+                    const offset = Math.round((parseLocalDate(dateFrom) - parseLocalDate(schedule.dateFrom)) / 86400000);
+                    const subjectDates = Object.fromEntries(Object.entries(schedule.subjectDates).map(([key, value]) => [
+                        key,
+                        value?.date
+                            ? { ...value, date: shiftDate(value.date, offset), postponedAt: serverTimestamp() }
+                            : value
+                    ]));
+                    await setDoc(reference, { ...schedule, dateFrom, dateTo, subjectDates });
+                }
+                closePostponeModal();
+                showToast('Postponement saved and synced', 'success');
+            } catch (error) {
+                console.error('Postponement error:', error);
+                showToast('Could not save postponement', 'error');
+            }
         }
 
         window.switchView = function(view) {
@@ -852,7 +1143,18 @@
             }
 
             const docId = editId ? editId : `sched_${crypto.randomUUID()}`;
-            const payload = { id: docId, name, dateFrom, dateTo, subjects: [...selectedSubjects] };
+            const existing = scheduleData.find(item => item.id === docId);
+            const previous = existing ? normalizeSchedule(existing) : null;
+            const payload = {
+                ...(previous || {}),
+                id: docId,
+                name,
+                dateFrom,
+                dateTo,
+                subjects: [...selectedSubjects],
+                subjectStatus: previous?.subjectStatus || {},
+                subjectDates: previous?.subjectDates || {}
+            };
 
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'schedules', docId);
@@ -941,12 +1243,16 @@
                     const id = typeof item.id === 'string' && item.id && !item.id.includes('/')
                         ? item.id
                         : `sched_${crypto.randomUUID()}`;
+                    const existing = scheduleData.find(record => record.id === id);
+                    const previous = existing ? normalizeSchedule(existing) : null;
                     return {
                         id,
                         name: schedule.name.trim(),
                         dateFrom: schedule.dateFrom,
                         dateTo: schedule.dateTo,
-                        subjects: schedule.subjects
+                        subjects: schedule.subjects,
+                        subjectStatus: previous?.subjectStatus || schedule.subjectStatus,
+                        subjectDates: previous?.subjectDates || schedule.subjectDates
                     };
                 });
                 const batch = writeBatch(db);
