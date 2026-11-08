@@ -1131,12 +1131,15 @@
             for (const tableName of Object.keys(defaultColumnOrders)) {
                 const headerRow = document.getElementById(tableName === 'schedule' ? 'scheduleHeaderRow' : 'rankingHeaderRow');
                 const order = columnOrders[tableName];
-                headerRow.innerHTML = order.map((key, index) => {
+                const visibleOrder = tableName === 'schedule' && !isAdmin
+                    ? order.filter(key => key !== 'actions')
+                    : order;
+                headerRow.innerHTML = visibleOrder.map((key, index) => {
                     const column = columnDefinitions[tableName][key];
                     const moveButtons = isAdmin ? `
                         <span class="ml-1 inline-flex items-center gap-0.5 normal-case">
                             <button type="button" onclick="moveTableColumn('${tableName}', '${key}', -1)" aria-label="Move ${column.label} left" title="Move left" ${index === 0 ? 'disabled' : ''} class="rounded p-1 text-slate-400 hover:bg-white hover:text-indigo-700 disabled:invisible"><i class="fa-solid fa-chevron-left text-[9px]"></i></button>
-                            <button type="button" onclick="moveTableColumn('${tableName}', '${key}', 1)" aria-label="Move ${column.label} right" title="Move right" ${index === order.length - 1 ? 'disabled' : ''} class="rounded p-1 text-slate-400 hover:bg-white hover:text-indigo-700 disabled:invisible"><i class="fa-solid fa-chevron-right text-[9px]"></i></button>
+                            <button type="button" onclick="moveTableColumn('${tableName}', '${key}', 1)" aria-label="Move ${column.label} right" title="Move right" ${index === visibleOrder.length - 1 ? 'disabled' : ''} class="rounded p-1 text-slate-400 hover:bg-white hover:text-indigo-700 disabled:invisible"><i class="fa-solid fa-chevron-right text-[9px]"></i></button>
                         </span>` : '';
                     return `<th class="${column.className}"><div class="flex items-center ${tableName === 'schedule' && key === 'actions' ? 'justify-center' : ''}"><span>${column.label}</span>${moveButtons}</div></th>`;
                 }).join('');
@@ -1277,7 +1280,7 @@
                 };
                 tableHtml += `
                     <tr class="hover:bg-slate-50/80 transition group">
-                        ${columnOrders.schedule.map(column => cells[column]).join('')}
+                        ${columnOrders.schedule.filter(column => isAdmin || column !== 'actions').map(column => cells[column]).join('')}
                     </tr>
                 `;
 
