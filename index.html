@@ -57,29 +57,31 @@
                 <span id="syncStatus" class="bg-indigo-800 text-indigo-200 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
                     <i class="fa-solid fa-cloud text-emerald-400"></i> Connecting Cloud...
                 </span>
-                <button type="button" onclick="openLoginPage()" class="bg-white text-indigo-700 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2">
+                <span id="signedInUser" class="hidden max-w-48 truncate text-xs text-indigo-100"></span>
+                <button type="button" id="loginButton" onclick="openLoginPage()" class="bg-white text-indigo-700 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2">
                     <i class="fa-solid fa-right-to-bracket"></i> Login
                 </button>
-                <button type="button" disabled title="Sign-in is not configured" class="bg-indigo-800/60 text-indigo-300 px-3 py-2 rounded-lg text-sm font-medium cursor-not-allowed flex items-center gap-2">
+                <button type="button" id="logoutButton" onclick="logout()" class="hidden bg-indigo-800 hover:bg-indigo-900 text-indigo-100 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
                     <i class="fa-solid fa-right-from-bracket"></i> Logout
                 </button>
-                <button onclick="openSubjectModal()" class="bg-indigo-800 hover:bg-indigo-900 text-indigo-100 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5">
+                <button data-admin-only onclick="openSubjectModal()" class="hidden bg-indigo-800 hover:bg-indigo-900 text-indigo-100 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5">
                     <i class="fa-solid fa-book-medical"></i> Add Subject
                 </button>
-                <button onclick="openAddModal()" class="bg-white text-indigo-700 hover:bg-indigo-50 px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2">
+                <button data-admin-only onclick="openAddModal()" class="hidden bg-white text-indigo-700 hover:bg-indigo-50 px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2">
                     <i class="fa-solid fa-plus"></i> Add Schedule
                 </button>
-                <button onclick="resetData()" class="bg-indigo-800 hover:bg-indigo-900 text-indigo-100 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5" title="Reset to Default">
-                    <i class="fa-solid fa-rotate-right"></i> Reset Default
+                <button data-admin-only onclick="document.getElementById('scheduleImport').click()" class="hidden bg-indigo-800 hover:bg-indigo-900 text-indigo-100 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5" title="Import schedules from JSON">
+                    <i class="fa-solid fa-file-import"></i> Import
                 </button>
-                <button onclick="exportData()" class="bg-indigo-800 hover:bg-indigo-900 text-indigo-100 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5" title="Export JSON">
+                <input type="file" id="scheduleImport" accept="application/json,.json" class="hidden" onchange="importSchedules(event)">
+                <button id="exportButton" onclick="exportData()" class="hidden bg-indigo-800 hover:bg-indigo-900 text-indigo-100 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5" title="Export JSON">
                     <i class="fa-solid fa-download"></i> Export
                 </button>
             </div>
         </div>
     </header>
 
-    <div id="loginPage" class="fixed inset-0 bg-slate-100 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="loginPageTitle">
+    <div id="loginPage" class="fixed inset-0 bg-slate-100 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="loginPageTitle">
         <div class="min-h-full flex items-center justify-center p-4">
             <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-4xl w-full overflow-hidden">
                 <div class="bg-indigo-700 text-white px-6 py-5 flex justify-between items-center">
@@ -92,46 +94,46 @@
                             <p class="text-sm text-indigo-200">Member and administrator sign in</p>
                         </div>
                     </div>
-                    <button type="button" onclick="closeLoginPage()" class="text-indigo-200 hover:text-white text-lg" aria-label="Close login page"><i class="fa-solid fa-xmark"></i></button>
+                    <button type="button" data-authenticated-only onclick="closeLoginPage()" class="hidden text-indigo-200 hover:text-white text-lg" aria-label="Close login page"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="p-6 sm:p-8">
-                    <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="status">
-                        <p class="font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Sign-in is not connected yet</p>
-                        <p class="mt-1">Firebase Authentication must be configured before accounts can be verified. These forms are disabled and do not send or store your password. The schedule is not protected by sign-in yet.</p>
+                    <div id="authError" class="hidden mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900" role="alert"></div>
+                    <div id="authStatusMessage" class="hidden mb-6 rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-900" role="status">
+                        Checking sign-in status…
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <section class="rounded-xl border border-slate-200 p-5">
                             <h3 class="text-base font-bold text-slate-800">Member Login</h3>
                             <p class="text-sm text-slate-500 mt-1 mb-4">Sign in with your Google account or email.</p>
-                            <button type="button" disabled title="Firebase Authentication is not configured" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-400 font-semibold text-sm cursor-not-allowed">
+                            <button type="button" id="googleLoginButton" onclick="loginWithGoogle()" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-sm">
                                 <i class="fa-brands fa-google mr-2"></i>Continue with Google
                             </button>
                             <div class="flex items-center gap-3 my-4 text-xs text-slate-400"><span class="h-px bg-slate-200 flex-1"></span>OR EMAIL<span class="h-px bg-slate-200 flex-1"></span></div>
-                            <form class="space-y-3" onsubmit="return false">
+                            <form class="space-y-3" onsubmit="loginWithEmail(event)">
                                 <div>
                                     <label for="memberEmail" class="block text-xs font-semibold text-slate-600 mb-1">Email address</label>
-                                    <input id="memberEmail" type="email" autocomplete="email" disabled placeholder="you@example.com" class="w-full px-3 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-sm cursor-not-allowed">
+                                    <input id="memberEmail" type="email" autocomplete="email" required placeholder="you@example.com" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm">
                                 </div>
                                 <div>
                                     <label for="memberPassword" class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
-                                    <input id="memberPassword" type="password" autocomplete="current-password" disabled placeholder="Enter your password" class="w-full px-3 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-sm cursor-not-allowed">
+                                    <input id="memberPassword" type="password" autocomplete="current-password" required placeholder="Enter your password" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm">
                                 </div>
-                                <button type="button" disabled class="w-full px-4 py-2.5 rounded-xl bg-indigo-300 text-white font-semibold text-sm cursor-not-allowed">Login with Email</button>
+                                <button type="submit" class="w-full px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm">Login with Email</button>
                             </form>
                         </section>
                         <section class="rounded-xl border border-slate-200 p-5">
                             <h3 class="text-base font-bold text-slate-800">Admin Login</h3>
                             <p class="text-sm text-slate-500 mt-1 mb-4">Use the administrator account configured in Firebase Authentication.</p>
-                            <form class="space-y-3" onsubmit="return false">
+                            <form class="space-y-3" onsubmit="loginAsAdmin(event)">
                                 <div>
                                     <label for="adminId" class="block text-xs font-semibold text-slate-600 mb-1">Admin ID</label>
-                                    <input id="adminId" type="text" autocomplete="username" disabled placeholder="Admin ID" class="w-full px-3 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-sm cursor-not-allowed">
+                                    <input id="adminId" type="text" autocomplete="username" required placeholder="Admin ID" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm">
                                 </div>
                                 <div>
                                     <label for="adminPassword" class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
-                                    <input id="adminPassword" type="password" autocomplete="current-password" disabled placeholder="Enter admin password" class="w-full px-3 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-sm cursor-not-allowed">
+                                    <input id="adminPassword" type="password" autocomplete="current-password" required placeholder="Enter admin password" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm">
                                 </div>
-                                <button type="button" disabled class="w-full px-4 py-2.5 rounded-xl bg-indigo-300 text-white font-semibold text-sm cursor-not-allowed">Admin Login</button>
+                                <button type="submit" class="w-full px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm">Admin Login</button>
                             </form>
                             <p class="mt-4 text-xs text-slate-500">The admin password must be verified by Firebase; it is never embedded in this website.</p>
                         </section>
@@ -145,7 +147,7 @@
     </div>
 
     <!-- Main Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+    <main id="appContent" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
 
         <!-- Schedule Filters -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -301,19 +303,32 @@
     <!-- Firebase SDK & App Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global Firebase handles
-        let db, auth, userId;
+        let db, auth, currentUser;
         let scheduleData = [];
         let subjectData = [];
         let selectedSubjects = [];
-        let appId;
-        let useLocalStorage = false;
+        let isAdmin = false;
         let currentView = 'table';
-        const scheduleStorageKey = 'schedule-manager-schedules';
-        const subjectStorageKey = 'schedule-manager-subjects';
+        const appId = 'weekly-schedule-2026';
+        const adminId = 'surya11008';
+        const adminEmail = 'admin11008@gmail.com';
+        const adminUid = '6NguI1ON0Dg95qeJNeXnbw2aRyX2';
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGFYGJDBQeAkMUucaj4O0PWWPB03lL01Y",
+            authDomain: "evaluation-dd0ff.firebaseapp.com",
+            databaseURL: "https://evaluation-dd0ff-default-rtdb.firebaseio.com",
+            projectId: "evaluation-dd0ff",
+            storageBucket: "evaluation-dd0ff.firebasestorage.app",
+            messagingSenderId: "889018796074",
+            appId: "1:889018796074:web:042a59274a4cd589d85b53",
+            measurementId: "G-MMGPR1ENVS"
+        };
+        let unsubscribeSchedules = null;
+        let unsubscribeSubjects = null;
         const catalogSubjects = [
             "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు అన్ సాంగ్ హోంగ్ గారు",
             "1-2 ప్రతి యుగములో రక్షకుడు మరియు క్రొత్త పేరు",
@@ -387,159 +402,186 @@
             "2-10 గల 4:10 చూపిస్తూ విశ్రాంతిదినము మరియు పండుగలు కొట్టివేయబడెను అనే అబద్ధ వాదన"
         ];
 
-        // Full Telugu Default Dataset
-        const defaultData = [
-            { id: "1", category: "Weekly 5 Subjects", name: "Baby", mon: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-4 యెరూషలేము తల్లి", wed: "1-7 నిత్యజీవమునకు మార్గమైన పస్కా", thu: "1-10 పరిశుద్ధ గ్రంథము సత్యము", fri: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు" },
-            { id: "2", category: "Weekly 5 Subjects", name: "Jeeva", mon: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", tue: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", wed: "1-8 సిలువ ఆరాధన విగ్రహారాధన", thu: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "1-4 యెరూషలేము తల్లి" },
-            { id: "3", category: "Weekly 5 Subjects", name: "Manasa", mon: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-6 విశ్రాంతిదినమును పరిశుద్ధముగా ఆచరించండి", wed: "1-9 వెంటనే బాప్తిస్మము పొందండి", thu: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", fri: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము" },
-            { id: "4", category: "Weekly 5 Subjects", name: "Mari", mon: "1-4 యెరూషలేము తల్లి", tue: "1-7 నిత్యజీవమునకు మార్గమైన పస్కా", wed: "1-10 పరిశుద్ధ గ్రంథము సత్యము", thu: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "1-6 విశ్రాంతిదినమును పరిశుద్ధముగా ఆచరించండి" },
-            { id: "5", category: "Weekly 5 Subjects", name: "Maruthi", mon: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", tue: "1-8 సిలువ ఆరాధన విగ్రహారాధన", wed: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", thu: "1-4 యెరూషలేము తల్లి", fri: "1-7 నిత్యజీవమునకు మార్గమైన పస్కా" },
-            { id: "6", category: "Weekly 5 Subjects", name: "Meshach", mon: "1-6 విశ్రాంతిదినమును పరిశుద్ధముగా ఆచరించండి", tue: "1-9 వెంటనే బాప్తిస్మము పొందండి", wed: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", thu: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", fri: "1-8 సిలువ ఆరాధన విగ్రహారాధన" },
-            { id: "7", category: "Weekly 5 Subjects", name: "Paul", mon: "1-7 నిత్యజీవమునకు మార్గమైన పస్కా", tue: "1-10 పరిశుద్ధ గ్రంథము సత్యము", wed: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", thu: "1-6 విశ్రాంతిదినమును పరిశుద్ధముగా ఆచరించండి", fri: "1-9 వెంటనే బాప్తిస్మము పొందండి" },
-            { id: "8", category: "Weekly 5 Subjects", name: "Prameela", mon: "1-8 సిలువ ఆరాధన విగ్రహారాధన", tue: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", wed: "1-4 యెరూషలేము తల్లి", thu: "1-7 నిత్యజీవమునకు మార్గమైన పస్కా", fri: "1-10 పరిశుద్ధ గ్రంథము సత్యము" },
-            { id: "9", category: "Weekly 5 Subjects", name: "Rahul", mon: "1-9 వెంటనే బాప్తిస్మము పొందండి", tue: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", wed: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", thu: "1-8 సిలువ ఆరాధన విగ్రహారాధన", fri: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు" },
-            { id: "10", category: "Weekly 5 Subjects", name: "Shadrach", mon: "1-10 పరిశుద్ధ గ్రంథము సత్యము", tue: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", wed: "1-6 విశ్రాంతిదినమును పరిశుద్ధముగా ఆచరించండి", thu: "1-9 వెంటనే బాప్తిస్మము పొందండి", fri: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు" },
-            { id: "11", category: "Weekly 5 Subjects", name: "Sheeba", mon: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-4 యెరూషలేము తల్లి", wed: "1-7 నిత్యజీవమునకు మార్గమైన పస్కా", thu: "1-10 పరిశుద్ధ గ్రంథము సత్యము", fri: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు" },
-            { id: "12", category: "Weekly 5 Subjects", name: "Sowmya", mon: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", tue: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", wed: "1-8 సిలువ ఆరాధన విగ్రహారాధన", thu: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "1-4 యెరూషలేము తల్లి" },
-            { id: "13", category: "Weekly 5 Subjects", name: "Subashini", mon: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-6 విశ్రాంతిదినమును పరిశుద్ధముగా ఆచరించండి", wed: "1-9 వెంటనే బాప్తిస్మము పొందండి", thu: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", fri: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము" },
-            
-            { id: "14", category: "Weekly 3 Subjects", name: "Abednego", mon: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-4 యెరూషలేము తల్లి", wed: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", thu: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", fri: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు" },
-            { id: "15", category: "Weekly 3 Subjects", name: "Joshna", mon: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", tue: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", wed: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", thu: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "1-4 యెరూషలేము తల్లి" },
-            { id: "16", category: "Weekly 3 Subjects", name: "Malathi", mon: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", wed: "1-4 యెరూషలేము తల్లి", thu: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", fri: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము" },
-            { id: "17", category: "Weekly 3 Subjects", name: "Maneesh", mon: "1-4 యెరూషలేము తల్లి", tue: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", wed: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", thu: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు" },
-            { id: "18", category: "Weekly 3 Subjects", name: "Penchalaiah", mon: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", tue: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", wed: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", thu: "1-4 యెరూషలేము తల్లి", fri: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు" },
-            { id: "19", category: "Weekly 3 Subjects", name: "Praveena", mon: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-4 యెరూషలేము తల్లి", wed: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", thu: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", fri: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు" },
-            { id: "20", category: "Weekly 3 Subjects", name: "Sudarshan", mon: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", tue: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", wed: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", thu: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "1-4 యెరూషలేము తల్లి" },
-            { id: "21", category: "Weekly 3 Subjects", name: "Swapna", mon: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", wed: "1-4 యెరూషలేము తల్లి", thu: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", fri: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము" },
-
-            { id: "22", category: "Weekly 2 Subjects", name: "Ashajyothi", mon: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-4 యెరూషలేము తల్లి", wed: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", thu: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", fri: "" },
-            { id: "23", category: "Weekly 2 Subjects", name: "Jasmin", mon: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", tue: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", wed: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", thu: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "" },
-            { id: "24", category: "Weekly 2 Subjects", name: "John", mon: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", wed: "1-4 యెరూషలేము తల్లి", thu: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", fri: "" },
-            { id: "25", category: "Weekly 2 Subjects", name: "Kalyani", mon: "1-4 యెరూషలేము తల్లి", tue: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", wed: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", thu: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "" },
-            { id: "26", category: "Weekly 2 Subjects", name: "Murari", mon: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", tue: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", wed: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", thu: "1-4 యెరూషలేము తల్లి", fri: "" },
-            { id: "27", category: "Weekly 2 Subjects", name: "Pallavi", mon: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-4 యెరూషలేము తల్లి", wed: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", thu: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", fri: "" },
-            { id: "28", category: "Weekly 2 Subjects", name: "Priyanka", mon: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", tue: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", wed: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", thu: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "" },
-            { id: "29", category: "Weekly 2 Subjects", name: "Raja", mon: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", wed: "1-4 యెరూషలేము తల్లి", thu: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", fri: "" },
-            { id: "30", category: "Weekly 2 Subjects", name: "Revathi", mon: "1-4 యెరూషలేము తల్లి", tue: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", wed: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", thu: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "" },
-            { id: "31", category: "Weekly 2 Subjects", name: "Sipora", mon: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", tue: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", wed: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", thu: "1-4 యెరూషలేము తల్లి", fri: "" },
-            { id: "32", category: "Weekly 2 Subjects", name: "Sumanth", mon: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-4 యెరూషలేము తల్లి", wed: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", thu: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", fri: "" },
-            { id: "33", category: "Weekly 2 Subjects", name: "Susanna", mon: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", tue: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", wed: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", thu: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "" },
-
-            { id: "34", category: "PBC", name: "Bharathi", mon: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-10 పరిశుద్ధ గ్రంథము సత్యము", wed: "1-9 వెంటనే బాప్తిస్మము పొందండి", thu: "1-8 సిలువ ఆరాధన విగ్రహారాధన", fri: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు" },
-            { id: "35", category: "PBC", name: "Chaitanya", mon: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", tue: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", wed: "1-10 పరిశుద్ధ గ్రంథము సత్యము", thu: "1-9 వెంటనే బాప్తిస్మము పొందండి", fri: "1-4 యెరూషలేము తల్లి" },
-            { id: "36", category: "PBC", name: "Joseph", mon: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", tue: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", wed: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", thu: "1-10 పరిశుద్ధ గ్రంథము సత్యము", fri: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము" },
-            { id: "37", category: "PBC", name: "Lilly", mon: "1-4 యెరూషలేము తల్లి", tue: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", wed: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", thu: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "1-6 విశ్రాంతిదినమును పరిశుద్ధముగా ఆచరించండి" },
-            { id: "38", category: "PBC", name: "Prakash", mon: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", tue: "1-4 యెరూషలేము తల్లి", wed: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", thu: "1-2 ప్రతీ యుగములో రక్తకుడు మరియు క్రొత్త పేరు", fri: "1-7 నిత్యజీవమునకు మార్గమైన పస్కా" },
-            { id: "39", category: "PBC", name: "Pravalika", mon: "1-6 విశ్రాంతిదినమును పరిశుద్ధముగా ఆచరించండి", tue: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", wed: "1-4 యెరూషలేము తల్లి", thu: "1-3 జీవ వృక్ష ఫలము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు", fri: "1-8 సిలువ ఆరాధన విగ్రహారాధన" },
-            { id: "40", category: "PBC", name: "Sarada", mon: "1-7 నిత్యజీవమునకు మార్గమైన పస్కా", tue: "1-6 విశ్రాంతిదినమును పరిశుద్ధముగా ఆచరించండి", wed: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", thu: "1-4 యెరూషలేము తల్లి", fri: "1-9 వెంటనే బాప్తిస్మము పొందండి" },
-            { id: "41", category: "PBC", name: "Shifra", mon: "1-8 సిలువ ఆరాధన విగ్రహారాధన", tue: "1-7 నిత్యజీవమునకు మార్గమైన పస్కా", wed: "1-6 విశ్రాంతిదినమును పరిశుద్ధముగా ఆచరించండి", thu: "1-5 పరలోక కుటుంబము మరియు భూలోక కుటుంబము", fri: "1-10 పరిశుద్ధ గ్రంథము సత్యము" },
-            { id: "42", category: "PBC", name: "Titus", mon: "1-9 వెంటనే బాప్తిస్మము పొందండి", tue: "1-8 సిలువ ఆరాధన విగ్రహారాధన", wed: "1-7 నిత్యజీవమునకు మార్గమైన పస్కా", thu: "1-6 విశ్రాంతిదినమును పరిశుద్ధముగా ఆచరించండి", fri: "1-1 పాపక్షమాపణ యొక్క రహస్యము మరియు క్రీస్తు ఆన్ సాంగ్ హోంగ్ గారు" }
-        ];
-
         // Initialize Firebase
         window.addEventListener('DOMContentLoaded', async () => {
             try {
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'weekly-schedule-2026';
-                const firebaseConfig = JSON.parse(__firebase_config);
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
+                document.getElementById('authStatusMessage').innerText = 'Connecting to secure sign-in…';
+                document.getElementById('authStatusMessage').classList.remove('hidden');
 
-                // Auth
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                userId = auth.currentUser?.uid || crypto.randomUUID();
-
-                document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-cloud text-emerald-400"></i> Cloud Synced';
-
-                // Realtime Firestore Listener
-                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'schedules');
-                const subjectRef = collection(db, 'artifacts', appId, 'public', 'data', 'subjects');
-
-                subjectData = [...new Set(defaultData.flatMap(item => ['mon', 'tue', 'wed', 'thu', 'fri']
-                    .map(day => item[day])
-                    .filter(Boolean)))];
-                updateSubjectOptions();
-
-                onSnapshot(subjectRef, (snapshot) => {
-                    subjectData = [...new Set([
-                        ...subjectData,
-                        ...snapshot.docs.map(subjectDoc => subjectDoc.data().name).filter(name => typeof name === 'string' && name.trim())
-                    ])];
+                onAuthStateChanged(auth, user => {
+                    currentUser = user;
+                    isAdmin = Boolean(user && user.uid === adminUid);
+                    updateAuthUI();
+                    stopDataListeners();
+                    scheduleData = [];
+                    subjectData = [];
                     updateSubjectOptions();
-                }, (error) => {
-                    console.error("Subject sync error:", error);
-                    showToast('Error loading subjects from cloud', 'error');
-                });
-                
-                onSnapshot(colRef, async (snapshot) => {
-                    if (snapshot.empty) {
-                        // Seed default data if empty
-                        for (const item of defaultData) {
-                            await setDoc(doc(colRef, item.id), item);
-                        }
-                    } else {
-                        scheduleData = [];
-                        snapshot.forEach(docSnap => {
-                            scheduleData.push({ id: docSnap.id, ...docSnap.data() });
-                        });
-                        scheduleData.sort((a, b) => {
-                            const first = normalizeSchedule(a);
-                            const second = normalizeSchedule(b);
-                            return first.dateFrom.localeCompare(second.dateFrom) || first.name.localeCompare(second.name);
-                        });
-                        renderSchedule();
-                    }
-                }, (error) => {
-                    console.error("Firestore error:", error);
-                    document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Offline Mode';
-                    useLocalStorage = true;
-                    loadLocalData();
-                });
+                    renderSchedule();
 
+                    if (user) {
+                        startDataListeners();
+                    } else {
+                        document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-lock text-amber-300"></i> Sign in required';
+                    }
+                }, error => {
+                    console.error("Authentication state error:", error);
+                    document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Auth error';
+                    showAuthError(firebaseErrorMessage(error));
+                });
             } catch (e) {
-                console.error("Initialization fallback:", e);
-                document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Local Storage';
-                useLocalStorage = true;
-                loadLocalData();
+                console.error("Firebase initialization error:", e);
+                document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Firebase error';
+                showAuthError('Could not connect to Firebase. Check your internet connection and Firebase project settings.');
             }
         });
 
         function getDefaultSubjects() {
-            return [...new Set([
-                ...catalogSubjects,
-                ...defaultData.flatMap(item => ['mon', 'tue', 'wed', 'thu', 'fri']
-                    .map(day => item[day])
-                    .filter(Boolean))
-            ])];
+            return [...new Set(catalogSubjects)];
         }
 
-        function loadLocalData() {
-            try {
-                const savedSchedules = localStorage.getItem(scheduleStorageKey);
-                const savedSubjects = localStorage.getItem(subjectStorageKey);
-                scheduleData = savedSchedules === null ? defaultData : JSON.parse(savedSchedules);
-                const customSubjects = savedSubjects === null ? [] : JSON.parse(savedSubjects);
-                if (!Array.isArray(scheduleData) || !Array.isArray(customSubjects)) {
-                    throw new Error('Saved schedule data must be arrays');
-                }
+        function startDataListeners() {
+            const schedulesRef = collection(db, 'artifacts', appId, 'public', 'data', 'schedules');
+            const subjectsRef = collection(db, 'artifacts', appId, 'public', 'data', 'subjects');
+            subjectData = getDefaultSubjects();
+            updateSubjectOptions();
+
+            unsubscribeSubjects = onSnapshot(subjectsRef, snapshot => {
                 subjectData = [...new Set([
                     ...getDefaultSubjects(),
-                    ...customSubjects
+                    ...snapshot.docs.map(subjectDoc => subjectDoc.data().name)
+                        .filter(name => typeof name === 'string' && name.trim())
                 ])];
-            } catch (error) {
-                console.error("Local data load error:", error);
-                scheduleData = defaultData;
-                subjectData = getDefaultSubjects();
-            }
-            renderSchedule();
+                updateSubjectOptions();
+            }, handleFirestoreError);
+
+            unsubscribeSchedules = onSnapshot(schedulesRef, snapshot => {
+                scheduleData = snapshot.docs.map(scheduleDoc => ({
+                    id: scheduleDoc.id,
+                    ...scheduleDoc.data()
+                }));
+                scheduleData.sort((a, b) => {
+                    const first = normalizeSchedule(a);
+                    const second = normalizeSchedule(b);
+                    return first.dateFrom.localeCompare(second.dateFrom) || first.name.localeCompare(second.name);
+                });
+                renderSchedule();
+                document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-cloud text-emerald-400"></i> Live Sync';
+            }, handleFirestoreError);
         }
 
-        function saveLocalSchedules() {
-            localStorage.setItem(scheduleStorageKey, JSON.stringify(scheduleData));
+        function stopDataListeners() {
+            if (unsubscribeSchedules) unsubscribeSchedules();
+            if (unsubscribeSubjects) unsubscribeSubjects();
+            unsubscribeSchedules = null;
+            unsubscribeSubjects = null;
+        }
+
+        function handleFirestoreError(error) {
+            console.error("Firestore access error:", error);
+            document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Data access error';
+            showToast(error.code === 'permission-denied'
+                ? 'Access denied. Publish the provided Firestore security rules.'
+                : 'Could not load live data from Firestore', 'error');
+        }
+
+        function updateAuthUI() {
+            const authenticated = Boolean(currentUser);
+            document.getElementById('appContent').classList.toggle('hidden', !authenticated);
+            document.getElementById('loginPage').classList.toggle('hidden', authenticated);
+            document.getElementById('loginButton').classList.toggle('hidden', authenticated);
+            document.getElementById('logoutButton').classList.toggle('hidden', !authenticated);
+            document.getElementById('signedInUser').classList.toggle('hidden', !authenticated);
+            document.getElementById('signedInUser').innerText = currentUser?.email || '';
+            document.getElementById('authStatusMessage').classList.add('hidden');
+            document.querySelectorAll('[data-authenticated-only]').forEach(element => {
+                element.classList.toggle('hidden', !authenticated);
+            });
+            document.querySelectorAll('[data-admin-only]').forEach(element => {
+                element.classList.toggle('hidden', !isAdmin);
+            });
+            document.getElementById('exportButton').classList.toggle('hidden', !isAdmin);
+        }
+
+        function showAuthError(message) {
+            const errorElement = document.getElementById('authError');
+            errorElement.innerText = message;
+            errorElement.classList.remove('hidden');
+        }
+
+        function requireAdmin() {
+            if (currentUser && isAdmin) return true;
+            showToast('Administrator sign-in is required for this action.', 'error');
+            return false;
+        }
+
+        function clearAuthError() {
+            document.getElementById('authError').classList.add('hidden');
+        }
+
+        function firebaseErrorMessage(error) {
+            const messages = {
+                'auth/invalid-credential': 'Email, admin ID, or password is incorrect.',
+                'auth/user-not-found': 'No account exists for these sign-in details.',
+                'auth/wrong-password': 'Email, admin ID, or password is incorrect.',
+                'auth/invalid-email': 'Enter a valid email address.',
+                'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
+                'auth/popup-closed-by-user': 'The Google sign-in window was closed before completing login.',
+                'auth/unauthorized-domain': 'Add this website domain to Firebase Authentication authorized domains.',
+                'auth/operation-not-allowed': 'Enable this sign-in provider in Firebase Authentication settings.',
+                'auth/network-request-failed': 'Network error. Check your internet connection and try again.'
+            };
+            return messages[error.code] || 'Sign-in failed. Check your details and Firebase Authentication settings.';
+        }
+
+        async function completeSignIn(operation) {
+            clearAuthError();
+            try {
+                await operation();
+            } catch (error) {
+                console.error("Sign-in error:", error);
+                showAuthError(error.code ? firebaseErrorMessage(error) : error.message);
+            }
+        }
+
+        window.loginWithGoogle = function() {
+            return completeSignIn(() => signInWithPopup(auth, new GoogleAuthProvider()));
+        }
+
+        window.loginWithEmail = function(event) {
+            event.preventDefault();
+            const email = document.getElementById('memberEmail').value.trim();
+            const password = document.getElementById('memberPassword').value;
+            return completeSignIn(() => signInWithEmailAndPassword(auth, email, password));
+        }
+
+        window.loginAsAdmin = function(event) {
+            event.preventDefault();
+            const enteredId = document.getElementById('adminId').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            if (enteredId.toLocaleLowerCase() !== adminId) {
+                showAuthError('Admin ID or password is incorrect.');
+                return;
+            }
+
+            return completeSignIn(async () => {
+                const credential = await signInWithEmailAndPassword(auth, adminEmail, password);
+                if (credential.user.uid !== adminUid) {
+                    await signOut(auth);
+                    throw new Error('The Firebase account is not authorized as the Evaluation admin.');
+                }
+            });
+        }
+
+        window.logout = async function() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Sign-out error:", error);
+                showToast('Could not sign out. Please try again.', 'error');
+            }
         }
 
         function getSlotBadge(val) {
@@ -603,11 +645,12 @@
         }
 
         window.openLoginPage = function() {
+            clearAuthError();
             document.getElementById('loginPage').classList.remove('hidden');
         }
 
         window.closeLoginPage = function() {
-            document.getElementById('loginPage').classList.add('hidden');
+            if (currentUser) document.getElementById('loginPage').classList.add('hidden');
         }
 
         window.clearFilters = function() {
@@ -652,22 +695,25 @@
 
             filtered.forEach(item => {
                 const subjectBadges = item.subjects.map(getSlotBadge).join(' ');
+                const actionButtons = isAdmin ? `
+                    <button data-action="edit" data-id="${escapeHtml(item.id)}" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Edit">
+                        <i class="fa-solid fa-pen text-xs"></i>
+                    </button>
+                    <button data-action="delete" data-id="${escapeHtml(item.id)}" class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Delete">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>` : '';
                 tableHtml += `
                     <tr class="hover:bg-slate-50/80 transition group">
                         <td class="py-3 px-4 border-r border-slate-200 font-semibold text-slate-800">${escapeHtml(item.name)}</td>
                         <td class="py-3 px-4 border-r border-slate-200 text-sm">${formatDate(item.dateFrom)}</td>
                         <td class="py-3 px-4 border-r border-slate-200 text-sm">${formatDate(item.dateTo)}</td>
                         <td class="py-3 px-4 border-r border-slate-200"><div class="flex flex-wrap gap-1.5">${subjectBadges || '<span class="text-slate-400 text-xs">No subjects</span>'}</div></td>
-                        <td class="py-3 px-2 text-center">
+                        ${isAdmin ? '<td class="py-3 px-2 text-center">' : ''}
+                        ${isAdmin ? `
                             <div class="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition">
-                                <button data-action="edit" data-id="${escapeHtml(item.id)}" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Edit">
-                                    <i class="fa-solid fa-pen text-xs"></i>
-                                </button>
-                                <button data-action="delete" data-id="${escapeHtml(item.id)}" class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Delete">
-                                    <i class="fa-solid fa-trash text-xs"></i>
-                                </button>
+                                ${actionButtons}
                             </div>
-                        </td>
+                        </td>` : ''}
                     </tr>
                 `;
 
@@ -675,14 +721,7 @@
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between gap-4 hover:shadow-md transition">
                         <div class="flex justify-between items-start gap-2">
                             <h3 class="text-base font-bold text-slate-900">${escapeHtml(item.name)}</h3>
-                            <div class="flex items-center gap-1">
-                                <button data-action="edit" data-id="${escapeHtml(item.id)}" class="p-2 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded-lg transition text-xs" title="Edit">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-                                <button data-action="delete" data-id="${escapeHtml(item.id)}" class="p-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-lg transition text-xs" title="Delete">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
+                            ${isAdmin ? `<div class="flex items-center gap-1">${actionButtons}</div>` : ''}
                         </div>
 
                         <div class="text-sm space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
@@ -728,6 +767,7 @@
         }
 
         window.openAddModal = function() {
+            if (!requireAdmin()) return;
             document.getElementById('modalTitle').innerText = 'Add Schedule';
             document.getElementById('editDocId').value = '';
             document.getElementById('modalName').value = '';
@@ -739,6 +779,7 @@
         }
 
         window.openEditModal = function(id) {
+            if (!requireAdmin()) return;
             const record = scheduleData.find(item => item.id === id);
             if (!record) return;
             const schedule = normalizeSchedule(record);
@@ -791,6 +832,7 @@
 
         window.saveSchedule = async function(e) {
             e.preventDefault();
+            if (!requireAdmin()) return;
             const editId = document.getElementById('editDocId').value;
             const name = document.getElementById('modalName').value.trim();
             const dateFrom = document.getElementById('modalDateFrom').value;
@@ -813,16 +855,8 @@
             const payload = { id: docId, name, dateFrom, dateTo, subjects: [...selectedSubjects] };
 
             try {
-                if (useLocalStorage) {
-                    const index = scheduleData.findIndex(item => item.id === docId);
-                    if (index === -1) scheduleData.push(payload);
-                    else scheduleData[index] = payload;
-                    saveLocalSchedules();
-                    renderSchedule();
-                } else {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'schedules', docId);
-                    await setDoc(docRef, payload);
-                }
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'schedules', docId);
+                await setDoc(docRef, payload);
                 showToast('Schedule saved successfully', 'success');
                 closeModal();
             } catch (err) {
@@ -832,6 +866,7 @@
         }
 
         window.openSubjectModal = function() {
+            if (!requireAdmin()) return;
             document.getElementById('newSubjectName').value = '';
             document.getElementById('subjectModal').classList.remove('hidden');
             document.getElementById('newSubjectName').focus();
@@ -843,6 +878,7 @@
 
         window.saveSubject = async function(e) {
             e.preventDefault();
+            if (!requireAdmin()) return;
             const name = document.getElementById('newSubjectName').value.trim();
             if (!name) return;
             if ([...subjectData, ...scheduleData.flatMap(item => normalizeSchedule(item).subjects)]
@@ -852,14 +888,8 @@
             }
 
             try {
-                if (useLocalStorage) {
-                    subjectData.push(name);
-                    localStorage.setItem(subjectStorageKey, JSON.stringify(subjectData.filter(subject => !getDefaultSubjects().includes(subject))));
-                } else {
-                    const subjectId = `subject_${crypto.randomUUID()}`;
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'subjects', subjectId), { name });
-                    subjectData.push(name);
-                }
+                const subjectId = `subject_${crypto.randomUUID()}`;
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'subjects', subjectId), { name });
                 updateSubjectOptions();
                 document.getElementById('subjectSelect').value = name;
                 closeSubjectModal();
@@ -871,15 +901,10 @@
         }
 
         window.deleteRecord = async function(id) {
+            if (!requireAdmin()) return;
             if (confirm('Are you sure you want to delete this schedule record?')) {
                 try {
-                    if (useLocalStorage) {
-                        scheduleData = scheduleData.filter(item => item.id !== id);
-                        saveLocalSchedules();
-                        renderSchedule();
-                    } else {
-                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'schedules', id));
-                    }
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'schedules', id));
                     showToast('Schedule deleted', 'success');
                 } catch (err) {
                     console.error("Delete error:", err);
@@ -888,33 +913,54 @@
             }
         }
 
-        window.resetData = async function() {
-            if (confirm('Are you sure you want to reset schedules to the defaults?')) {
-                try {
-                    if (useLocalStorage) {
-                        scheduleData = [...defaultData];
-                        saveLocalSchedules();
-                        renderSchedule();
-                    } else {
-                        for (const item of defaultData) {
-                            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'schedules', item.id), item);
-                        }
-                    }
-                    showToast('Schedules reset to default', 'success');
-                } catch (err) {
-                    console.error("Reset error:", err);
-                    showToast('Error resetting data', 'error');
-                }
-            }
-        }
-
         window.exportData = function() {
+            if (!requireAdmin()) return;
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(scheduleData, null, 2));
             const dlAnchorElem = document.createElement('a');
             dlAnchorElem.setAttribute("href", dataStr);
             dlAnchorElem.setAttribute("download", "schedule_data.json");
             dlAnchorElem.click();
             showToast('Schedule exported as JSON', 'success');
+        }
+
+        window.importSchedules = async function(event) {
+            if (!requireAdmin()) return;
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            try {
+                const parsed = JSON.parse(await file.text());
+                if (!Array.isArray(parsed)) throw new Error('The JSON file must contain an array of schedules.');
+                if (parsed.length > 450) throw new Error('Import up to 450 schedules at a time.');
+                const schedules = parsed.map((item, index) => {
+                    if (!item || typeof item !== 'object' || typeof item.name !== 'string' || !item.name.trim()) {
+                        throw new Error(`Schedule ${index + 1} needs a name.`);
+                    }
+                    const schedule = normalizeSchedule(item);
+                    if (schedule.dateFrom > schedule.dateTo) throw new Error(`Schedule ${index + 1} has an invalid date range.`);
+                    const id = typeof item.id === 'string' && item.id && !item.id.includes('/')
+                        ? item.id
+                        : `sched_${crypto.randomUUID()}`;
+                    return {
+                        id,
+                        name: schedule.name.trim(),
+                        dateFrom: schedule.dateFrom,
+                        dateTo: schedule.dateTo,
+                        subjects: schedule.subjects
+                    };
+                });
+                const batch = writeBatch(db);
+                for (const schedule of schedules) {
+                    batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'schedules', schedule.id), schedule);
+                }
+                await batch.commit();
+                showToast(`Imported ${schedules.length} schedules`, 'success');
+            } catch (error) {
+                console.error("Schedule import error:", error);
+                showToast(error.message || 'Could not import schedules', 'error');
+            } finally {
+                event.target.value = '';
+            }
         }
 
         function showToast(message, type = 'success') {
