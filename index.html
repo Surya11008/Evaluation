@@ -255,9 +255,9 @@
                         <tr>
                             <th class="py-3.5 px-4">Rank</th>
                             <th class="py-3.5 px-4">Name</th>
+                            <th class="py-3.5 px-4">Progress</th>
                             <th class="py-3.5 px-4">Position</th>
                             <th class="py-3.5 px-4">Type</th>
-                            <th class="py-3.5 px-4">Progress</th>
                             <th class="py-3.5 px-4">Completed subjects</th>
                         </tr>
                     </thead>
@@ -1278,14 +1278,14 @@
                     <tr class="hover:bg-slate-50">
                         <td class="py-3 px-4 font-bold text-indigo-700">#${currentRank}</td>
                         <td class="py-3 px-4 font-semibold text-slate-800">${escapeHtml(item.name)}</td>
-                        <td class="py-3 px-4">${escapeHtml(item.position)}</td>
-                        <td class="py-3 px-4">${escapeHtml(item.type)}</td>
                         <td class="py-3 px-4">
                             <div class="flex items-center gap-2">
                                 <div class="h-2 w-24 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-emerald-500" style="width:${item.stats.percentage}%"></div></div>
                                 <span class="font-semibold text-emerald-700">${item.stats.percentage}%</span>
                             </div>
                         </td>
+                        <td class="py-3 px-4">${escapeHtml(item.position)}</td>
+                        <td class="py-3 px-4">${escapeHtml(item.type)}</td>
                         <td class="py-3 px-4">
                             <p class="mb-1 text-xs font-medium text-slate-600">${item.stats.completed} of ${item.stats.total} complete</p>
                             <div class="flex flex-wrap gap-1">${completionDetails || '<span class="text-xs text-slate-400">No subjects completed</span>'}</div>
