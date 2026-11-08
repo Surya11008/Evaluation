@@ -184,16 +184,20 @@
                     <option value="">All types</option>
                 </select>
             </label>
-            <label class="relative w-36 sm:w-40">
-                <span class="sr-only">Filter from date</span>
-                <i class="fa-solid fa-calendar-days pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-slate-400" aria-hidden="true"></i>
-                <input type="date" id="filterFrom" onchange="filterData()" aria-label="From date" title="From date" class="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 py-1 pl-7 pr-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </label>
-            <label class="relative w-36 sm:w-40">
-                <span class="sr-only">Filter to date</span>
-                <i class="fa-solid fa-calendar-check pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-slate-400" aria-hidden="true"></i>
-                <input type="date" id="filterTo" onchange="filterData()" aria-label="To date" title="To date" class="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 py-1 pl-7 pr-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </label>
+            <div class="flex h-9 items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-2" role="group" aria-label="Filter by date range">
+                <i class="fa-solid fa-calendar-days mr-0.5 text-[11px] text-slate-400" aria-hidden="true"></i>
+                <label class="flex items-center gap-1">
+                    <span class="sr-only">Filter from date</span>
+                    <span class="text-[10px] text-slate-400" aria-hidden="true">From</span>
+                    <input type="date" id="filterFrom" onchange="filterData()" aria-label="From date" title="From date" class="h-7 w-[124px] rounded-lg border border-transparent bg-transparent px-1 text-[11px] focus:border-indigo-300 focus:bg-white focus:outline-none">
+                </label>
+                <span class="text-[10px] text-slate-300" aria-hidden="true">–</span>
+                <label class="flex items-center gap-1">
+                    <span class="sr-only">Filter to date</span>
+                    <span class="text-[10px] text-slate-400" aria-hidden="true">To</span>
+                    <input type="date" id="filterTo" onchange="filterData()" aria-label="To date" title="To date" class="h-7 w-[124px] rounded-lg border border-transparent bg-transparent px-1 text-[11px] focus:border-indigo-300 focus:bg-white focus:outline-none">
+                </label>
+            </div>
             <div class="ml-auto flex h-9 items-center gap-2">
                 <span id="recordCount" class="whitespace-nowrap rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-500">Loading schedules...</span>
                 <div class="flex rounded-xl border border-slate-200 bg-slate-100 p-0.5">
