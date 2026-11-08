@@ -16,9 +16,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sree+Krushnadevaraya&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', 'Sree Krushnadevaraya', sans-serif;
         }
         ::-webkit-scrollbar {
             width: 8px;
@@ -299,11 +300,19 @@
                 </div>
                 <div>
                     <label for="modalPosition" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Position</label>
-                    <select id="modalPosition" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></select>
+                    <div class="flex gap-2">
+                        <select id="modalPosition" required class="min-w-0 flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></select>
+                        <button type="button" data-admin-only onclick="openCategoryModal('position', 'add')" class="hidden rounded-xl bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"><i class="fa-solid fa-plus mr-1"></i>Add</button>
+                        <button type="button" data-admin-only onclick="openCategoryModal('position', 'edit')" class="hidden rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200"><i class="fa-solid fa-pen mr-1"></i>Edit</button>
+                    </div>
                 </div>
                 <div>
                     <label for="modalType" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Type</label>
-                    <select id="modalType" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></select>
+                    <div class="flex gap-2">
+                        <select id="modalType" required class="min-w-0 flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></select>
+                        <button type="button" data-admin-only onclick="openCategoryModal('type', 'add')" class="hidden rounded-xl bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"><i class="fa-solid fa-plus mr-1"></i>Add</button>
+                        <button type="button" data-admin-only onclick="openCategoryModal('type', 'edit')" class="hidden rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200"><i class="fa-solid fa-pen mr-1"></i>Edit</button>
+                    </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -355,6 +364,32 @@
                 <div class="flex justify-end gap-3">
                     <button type="button" onclick="closeSubjectModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl">Cancel</button>
                     <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl">Add Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="categoryModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden">
+            <div class="bg-indigo-700 text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="categoryModalTitle" class="text-lg font-bold">Manage category</h3>
+                <button type="button" onclick="closeCategoryModal()" class="text-indigo-200 hover:text-white text-lg" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="saveCategory(event)" class="p-6 space-y-4">
+                <input type="hidden" id="categoryKind">
+                <input type="hidden" id="categoryMode">
+                <label id="categoryCurrentWrap" class="hidden block">
+                    <span class="mb-1 block text-xs font-semibold uppercase text-slate-700">Select category to edit</span>
+                    <select id="categoryCurrent" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm"></select>
+                </label>
+                <label class="block">
+                    <span id="categoryNameLabel" class="mb-1 block text-xs font-semibold uppercase text-slate-700">New category name</span>
+                    <input id="categoryName" type="text" required maxlength="60" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </label>
+                <p id="categoryHelp" class="text-xs text-slate-500"></p>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeCategoryModal()" class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200">Cancel</button>
+                    <button id="categorySaveButton" type="submit" class="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Save</button>
                 </div>
             </form>
         </div>
@@ -419,8 +454,12 @@
         const adminId = 'surya11008';
         const adminEmail = 'admin11008@gmail.com';
         const adminUid = '6NguI1ON0Dg95qeJNeXnbw2aRyX2';
-        const positions = ['Overseer', '(D)Overseer', 'Deacon', 'BCL', 'PBCL', 'Group Leader', 'Unit Leader', 'Co-Worker', 'Evangelist', 'Member', 'Other'];
-        const scheduleTypes = Array.from({ length: 10 }, (_, index) => `Type ${index + 1}`);
+        const defaultPositions = ['Overseer', '(D)Overseer', 'Deacon', 'BCL', 'PBCL', 'Group Leader', 'Unit Leader', 'Co-Worker', 'Evangelist', 'Member', 'Other'];
+        const defaultScheduleTypes = Array.from({ length: 10 }, (_, index) => `Type ${index + 1}`);
+        let positions = [...defaultPositions];
+        let scheduleTypes = [...defaultScheduleTypes];
+        let categoryData = [];
+        let unsubscribeCategories = null;
         const firebaseConfig = {
             apiKey: "AIzaSyCGFYGJDBQeAkMUucaj4O0PWWPB03lL01Y",
             authDomain: "evaluation-dd0ff.firebaseapp.com",
@@ -525,7 +564,12 @@
                     stopDataListeners();
                     scheduleData = [];
                     subjectData = [];
+                    categoryData = [];
+                    positions = [...defaultPositions];
+                    scheduleTypes = [...defaultScheduleTypes];
                     updateSubjectOptions();
+                    updatePositionOptions();
+                    updateTypeOptions();
                     renderSchedule();
 
                     if (user) {
@@ -552,6 +596,7 @@
         function startDataListeners() {
             const schedulesRef = collection(db, 'artifacts', appId, 'public', 'data', 'schedules');
             const subjectsRef = collection(db, 'artifacts', appId, 'public', 'data', 'subjects');
+            const categoriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'categories');
             subjectData = getDefaultSubjects();
             updateSubjectOptions();
 
@@ -562,6 +607,29 @@
                         .filter(name => typeof name === 'string' && name.trim())
                 ])];
                 updateSubjectOptions();
+            }, handleFirestoreError);
+
+            unsubscribeCategories = onSnapshot(categoriesRef, snapshot => {
+                categoryData = snapshot.docs.map(categoryDoc => ({ id: categoryDoc.id, ...categoryDoc.data() }))
+                    .filter(category => ['position', 'type'].includes(category.kind)
+                        && typeof category.name === 'string' && category.name.trim());
+                const retiredPositions = categoryData
+                    .filter(category => category.kind === 'position' && category.sourceName)
+                    .map(category => category.sourceName);
+                const retiredTypes = categoryData
+                    .filter(category => category.kind === 'type' && category.sourceName)
+                    .map(category => category.sourceName);
+                positions = [...new Set([
+                    ...defaultPositions.filter(position => !retiredPositions.includes(position)),
+                    ...categoryData.filter(category => category.kind === 'position').map(category => category.name)
+                ])].sort((a, b) => a.localeCompare(b));
+                scheduleTypes = [...new Set([
+                    ...defaultScheduleTypes.filter(type => !retiredTypes.includes(type)),
+                    ...categoryData.filter(category => category.kind === 'type').map(category => category.name)
+                ])].sort((a, b) => a.localeCompare(b));
+                updatePositionOptions();
+                updateTypeOptions();
+                renderSchedule();
             }, handleFirestoreError);
 
             unsubscribeSchedules = onSnapshot(schedulesRef, snapshot => {
@@ -582,8 +650,10 @@
         function stopDataListeners() {
             if (unsubscribeSchedules) unsubscribeSchedules();
             if (unsubscribeSubjects) unsubscribeSubjects();
+            if (unsubscribeCategories) unsubscribeCategories();
             unsubscribeSchedules = null;
             unsubscribeSubjects = null;
+            unsubscribeCategories = null;
         }
 
         function handleFirestoreError(error) {
@@ -765,6 +835,120 @@
             ).join('');
             filter.value = scheduleTypes.includes(currentFilter) ? currentFilter : '';
             selector.value = scheduleTypes.includes(currentType) ? currentType : 'Type 1';
+        }
+
+        function categoryDocumentId(kind, name) {
+            const binary = Array.from(new TextEncoder().encode(name), byte => String.fromCharCode(byte)).join('');
+            const key = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+            return `category_${kind}_${key}`;
+        }
+
+        window.openCategoryModal = function(kind, mode) {
+            if (!requireAdmin()) return;
+            const options = kind === 'position' ? positions : scheduleTypes;
+            const select = document.getElementById('categoryCurrent');
+            const currentValue = document.getElementById(kind === 'position' ? 'modalPosition' : 'modalType').value;
+            document.getElementById('categoryKind').value = kind;
+            document.getElementById('categoryMode').value = mode;
+            document.getElementById('categoryModalTitle').innerText = `${mode === 'add' ? 'Add' : 'Edit'} ${kind === 'position' ? 'Position' : 'Type'}`;
+            document.getElementById('categoryCurrentWrap').classList.toggle('hidden', mode !== 'edit');
+            document.getElementById('categoryNameLabel').innerText = mode === 'add' ? `New ${kind} name` : 'Updated name';
+            document.getElementById('categoryHelp').innerText = mode === 'edit'
+                ? 'Renaming this option also updates schedules currently assigned to it.'
+                : 'The new option will be available to everyone in schedule and status filters.';
+            select.innerHTML = options.map(option =>
+                `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`
+            ).join('');
+            select.onchange = () => {
+                document.getElementById('categoryName').value = select.value;
+            };
+            if (mode === 'edit') {
+                select.value = options.includes(currentValue) ? currentValue : options[0] || '';
+                document.getElementById('categoryName').value = select.value;
+            } else {
+                document.getElementById('categoryName').value = '';
+            }
+            document.getElementById('categoryModal').classList.remove('hidden');
+            document.getElementById('categoryName').focus();
+        }
+
+        window.closeCategoryModal = function() {
+            document.getElementById('categoryModal').classList.add('hidden');
+        }
+
+        window.saveCategory = async function(event) {
+            event.preventDefault();
+            if (!requireAdmin()) return;
+            const kind = document.getElementById('categoryKind').value;
+            const mode = document.getElementById('categoryMode').value;
+            const newName = document.getElementById('categoryName').value.trim();
+            const oldName = mode === 'edit' ? document.getElementById('categoryCurrent').value : '';
+            const options = kind === 'position' ? positions : scheduleTypes;
+            if (!['position', 'type'].includes(kind) || !['add', 'edit'].includes(mode) || !newName) {
+                showToast('Enter a valid category name.', 'error');
+                return;
+            }
+            if (options.some(option => option.toLocaleLowerCase() === newName.toLocaleLowerCase() && option !== oldName)) {
+                showToast(`That ${kind} already exists.`, 'error');
+                return;
+            }
+            if (mode === 'edit' && newName === oldName) {
+                closeCategoryModal();
+                return;
+            }
+
+            const existingCategory = categoryData.find(category => category.kind === kind && category.name === oldName);
+            const categoryId = mode === 'edit' && existingCategory
+                ? existingCategory.id
+                : categoryDocumentId(kind, mode === 'edit' ? oldName : newName);
+            const sourceName = mode === 'edit'
+                ? existingCategory?.sourceName || ((kind === 'position' ? defaultPositions : defaultScheduleTypes).includes(oldName) ? oldName : '')
+                : '';
+            const categoryRef = doc(db, 'artifacts', appId, 'public', 'data', 'categories', categoryId);
+            const batch = writeBatch(db);
+            batch.set(categoryRef, {
+                kind,
+                name: newName,
+                ...(sourceName ? { sourceName } : {}),
+                ...(mode === 'edit' ? { previousName: oldName } : {})
+            });
+
+            if (mode === 'edit') {
+                const updatedSchedules = scheduleData
+                    .map(record => normalizeSchedule(record))
+                    .filter(schedule => schedule[kind] === oldName);
+                if (updatedSchedules.length > 498) {
+                    showToast('Too many schedules to rename in one operation. Contact support.', 'error');
+                    return;
+                }
+                for (const schedule of updatedSchedules) {
+                    batch.set(
+                        doc(db, 'artifacts', appId, 'public', 'data', 'schedules', schedule.id),
+                        { [kind]: newName },
+                        { merge: true }
+                    );
+                }
+            }
+
+            try {
+                await batch.commit();
+                if (kind === 'position') {
+                    document.getElementById('modalPosition').value = newName;
+                    document.getElementById('positionFilter').value = oldName && document.getElementById('positionFilter').value === oldName
+                        ? newName
+                        : document.getElementById('positionFilter').value;
+                } else {
+                    document.getElementById('modalType').value = newName;
+                    document.getElementById('typeFilter').value = oldName && document.getElementById('typeFilter').value === oldName
+                        ? newName
+                        : document.getElementById('typeFilter').value;
+                }
+                closeCategoryModal();
+                showToast(mode === 'add' ? `${kind} added` : `${kind} updated`, 'success');
+            } catch (error) {
+                console.error('Category update error:', error);
+                showToast(`Could not ${mode === 'add' ? 'add' : 'update'} ${kind}. Check Firestore rules and try again.`, 'error');
+            }
         }
 
         function formatDate(date) {
