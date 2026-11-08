@@ -57,7 +57,7 @@
                 <span id="syncStatus" class="bg-indigo-800 text-indigo-200 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
                     <i class="fa-solid fa-cloud text-emerald-400"></i> Connecting Cloud...
                 </span>
-                <button type="button" onclick="openLoginInfo()" class="bg-white text-indigo-700 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2">
+                <button type="button" onclick="openLoginPage()" class="bg-white text-indigo-700 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2">
                     <i class="fa-solid fa-right-to-bracket"></i> Login
                 </button>
                 <button type="button" disabled title="Sign-in is not configured" class="bg-indigo-800/60 text-indigo-300 px-3 py-2 rounded-lg text-sm font-medium cursor-not-allowed flex items-center gap-2">
@@ -79,17 +79,66 @@
         </div>
     </header>
 
-    <div id="loginInfoModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="loginInfoTitle">
-        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden">
-            <div class="bg-indigo-700 text-white px-6 py-4 flex justify-between items-center">
-                <h2 id="loginInfoTitle" class="text-lg font-bold">Sign-in setup required</h2>
-                <button type="button" onclick="closeLoginInfo()" class="text-indigo-200 hover:text-white text-lg" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="p-6 space-y-4 text-sm text-slate-600">
-                <p>Email and admin sign-in are not connected yet. Firebase Authentication must be configured before this site can verify accounts or securely enable logout.</p>
-                <p class="font-medium text-slate-700">No password is stored or checked by this page. Schedules are not protected by a login at this time.</p>
-                <div class="flex justify-end">
-                    <button type="button" onclick="closeLoginInfo()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl">Close</button>
+    <div id="loginPage" class="fixed inset-0 bg-slate-100 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="loginPageTitle">
+        <div class="min-h-full flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-4xl w-full overflow-hidden">
+                <div class="bg-indigo-700 text-white px-6 py-5 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-indigo-600 p-2.5 rounded-xl border border-indigo-500" aria-hidden="true">
+                            <i class="fa-solid fa-book-open text-xl text-indigo-100"></i>
+                        </div>
+                        <div>
+                            <h2 id="loginPageTitle" class="text-xl font-bold">Login to Evaluation</h2>
+                            <p class="text-sm text-indigo-200">Member and administrator sign in</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeLoginPage()" class="text-indigo-200 hover:text-white text-lg" aria-label="Close login page"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-6 sm:p-8">
+                    <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="status">
+                        <p class="font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Sign-in is not connected yet</p>
+                        <p class="mt-1">Firebase Authentication must be configured before accounts can be verified. These forms are disabled and do not send or store your password. The schedule is not protected by sign-in yet.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <section class="rounded-xl border border-slate-200 p-5">
+                            <h3 class="text-base font-bold text-slate-800">Member Login</h3>
+                            <p class="text-sm text-slate-500 mt-1 mb-4">Sign in with your Google account or email.</p>
+                            <button type="button" disabled title="Firebase Authentication is not configured" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-400 font-semibold text-sm cursor-not-allowed">
+                                <i class="fa-brands fa-google mr-2"></i>Continue with Google
+                            </button>
+                            <div class="flex items-center gap-3 my-4 text-xs text-slate-400"><span class="h-px bg-slate-200 flex-1"></span>OR EMAIL<span class="h-px bg-slate-200 flex-1"></span></div>
+                            <form class="space-y-3" onsubmit="return false">
+                                <div>
+                                    <label for="memberEmail" class="block text-xs font-semibold text-slate-600 mb-1">Email address</label>
+                                    <input id="memberEmail" type="email" autocomplete="email" disabled placeholder="you@example.com" class="w-full px-3 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-sm cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label for="memberPassword" class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+                                    <input id="memberPassword" type="password" autocomplete="current-password" disabled placeholder="Enter your password" class="w-full px-3 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-sm cursor-not-allowed">
+                                </div>
+                                <button type="button" disabled class="w-full px-4 py-2.5 rounded-xl bg-indigo-300 text-white font-semibold text-sm cursor-not-allowed">Login with Email</button>
+                            </form>
+                        </section>
+                        <section class="rounded-xl border border-slate-200 p-5">
+                            <h3 class="text-base font-bold text-slate-800">Admin Login</h3>
+                            <p class="text-sm text-slate-500 mt-1 mb-4">Use the administrator account configured in Firebase Authentication.</p>
+                            <form class="space-y-3" onsubmit="return false">
+                                <div>
+                                    <label for="adminId" class="block text-xs font-semibold text-slate-600 mb-1">Admin ID</label>
+                                    <input id="adminId" type="text" autocomplete="username" disabled placeholder="Admin ID" class="w-full px-3 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-sm cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label for="adminPassword" class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+                                    <input id="adminPassword" type="password" autocomplete="current-password" disabled placeholder="Enter admin password" class="w-full px-3 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-sm cursor-not-allowed">
+                                </div>
+                                <button type="button" disabled class="w-full px-4 py-2.5 rounded-xl bg-indigo-300 text-white font-semibold text-sm cursor-not-allowed">Admin Login</button>
+                            </form>
+                            <p class="mt-4 text-xs text-slate-500">The admin password must be verified by Firebase; it is never embedded in this website.</p>
+                        </section>
+                    </div>
+                    <div class="flex justify-end mt-6">
+                        <button type="button" onclick="closeLoginPage()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl">Back to Schedule</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -553,12 +602,12 @@
             renderSchedule();
         }
 
-        window.openLoginInfo = function() {
-            document.getElementById('loginInfoModal').classList.remove('hidden');
+        window.openLoginPage = function() {
+            document.getElementById('loginPage').classList.remove('hidden');
         }
 
-        window.closeLoginInfo = function() {
-            document.getElementById('loginInfoModal').classList.add('hidden');
+        window.closeLoginPage = function() {
+            document.getElementById('loginPage').classList.add('hidden');
         }
 
         window.clearFilters = function() {
