@@ -150,7 +150,7 @@
     <main id="appContent" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
 
         <!-- Schedule Filters -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
             <div class="sm:col-span-2 lg:col-span-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Week view</p>
@@ -174,6 +174,12 @@
                 </select>
             </label>
             <label>
+                <span class="sr-only">Filter by position</span>
+                <select id="positionFilter" onchange="filterData()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">All positions</option>
+                </select>
+            </label>
+            <label>
                 <span class="sr-only">Filter from date</span>
                 <input type="date" id="filterFrom" onchange="filterData()" aria-label="From date" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </label>
@@ -190,13 +196,23 @@
             </div>
         </div>
 
+        <div class="flex gap-2 border-b border-slate-200" role="tablist" aria-label="Schedule pages">
+            <button type="button" id="scheduleTab" onclick="switchTab('schedule')" role="tab" aria-selected="true" class="px-4 py-2.5 border-b-2 border-indigo-600 text-indigo-700 text-sm font-semibold">
+                <i class="fa-solid fa-calendar-week mr-1.5"></i>Schedule
+            </button>
+            <button type="button" id="statusTab" onclick="switchTab('status')" role="tab" aria-selected="false" class="px-4 py-2.5 border-b-2 border-transparent text-slate-500 hover:text-indigo-700 text-sm font-semibold">
+                <i class="fa-solid fa-ranking-star mr-1.5"></i>Status &amp; Rankings
+            </button>
+        </div>
+
         <!-- Desktop / Tablet Table View Container -->
         <div id="tableViewContainer" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
             <div class="overflow-x-auto max-h-[680px]">
-                <table class="w-full text-left border-collapse min-w-[720px]">
+                <table class="w-full text-left border-collapse min-w-[850px]">
                     <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-bold tracking-wider sticky top-0 z-20 border-b border-slate-200 shadow-sm">
                         <tr>
                             <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">Name</th>
+                            <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">Position</th>
                             <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">From</th>
                             <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">To</th>
                             <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">Subjects</th>
@@ -214,6 +230,29 @@
         <div id="cardViewContainer" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <!-- Dynamically populated from Firestore -->
         </div>
+
+        <section id="statusViewContainer" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" role="tabpanel" aria-labelledby="statusTab">
+            <div class="p-5 border-b border-slate-200 bg-indigo-50/60">
+                <p class="text-xs uppercase tracking-wide font-semibold text-indigo-600">Leaderboard</p>
+                <h2 id="topPerformer" class="mt-1 text-lg font-bold text-slate-900">No progress yet</h2>
+                <p class="mt-1 text-xs text-slate-500">Completion percentages include every subject on each person’s schedule.</p>
+            </div>
+            <div class="overflow-x-auto max-h-[680px]">
+                <table class="w-full text-left border-collapse min-w-[760px]">
+                    <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-bold tracking-wider sticky top-0 z-20 border-b border-slate-200">
+                        <tr>
+                            <th class="py-3.5 px-4">Rank</th>
+                            <th class="py-3.5 px-4">Name</th>
+                            <th class="py-3.5 px-4">Position</th>
+                            <th class="py-3.5 px-4">Progress</th>
+                            <th class="py-3.5 px-4">Completed subjects</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statusTableBody" class="divide-y divide-slate-200 text-sm"></tbody>
+                </table>
+            </div>
+            <p id="statusEmptyState" class="hidden p-10 text-center text-sm text-slate-500">No status matches your current filters.</p>
+        </section>
 
         <!-- Empty State -->
         <div id="emptyState" class="hidden bg-white rounded-2xl border border-slate-200 p-12 text-center flex flex-col items-center justify-center gap-3">
@@ -249,6 +288,10 @@
                 <div>
                     <label for="modalName" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Name</label>
                     <input type="text" id="modalName" required maxlength="100" placeholder="Enter a name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label for="modalPosition" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Position</label>
+                    <select id="modalPosition" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></select>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -357,11 +400,13 @@
         let selectedSubjects = [];
         let isAdmin = false;
         let currentView = 'table';
+        let currentTab = 'schedule';
         let weekOffset = 0;
         const appId = 'weekly-schedule-2026';
         const adminId = 'surya11008';
         const adminEmail = 'admin11008@gmail.com';
         const adminUid = '6NguI1ON0Dg95qeJNeXnbw2aRyX2';
+        const positions = ['Overseer', '(D)Overseer', 'Deacon', 'BCL', 'PBCL', 'Group Leader', 'Unit Leader', 'Co-Worker', 'Evangelist', 'Member', 'Other'];
         const firebaseConfig = {
             apiKey: "AIzaSyCGFYGJDBQeAkMUucaj4O0PWWPB03lL01Y",
             authDomain: "evaluation-dd0ff.firebaseapp.com",
@@ -450,6 +495,7 @@
         // Initialize Firebase
         window.addEventListener('DOMContentLoaded', async () => {
             try {
+                updatePositionOptions();
                 setWeekRange(0);
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
@@ -651,6 +697,7 @@
             return {
                 ...item,
                 name: typeof item.name === 'string' ? item.name : '',
+                position: positions.includes(item.position) ? item.position : 'Other',
                 dateFrom: item.dateFrom || '2026-11-09',
                 dateTo: item.dateTo || '2026-11-13',
                 subjects: Array.isArray(item.subjects)
@@ -668,6 +715,29 @@
         function subjectKey(subject) {
             const binary = Array.from(new TextEncoder().encode(subject), byte => String.fromCharCode(byte)).join('');
             return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        }
+
+        function getCompletionStats(item) {
+            const schedule = normalizeSchedule(item);
+            const total = schedule.subjects.length;
+            const completed = schedule.subjects.filter(subject => Boolean(schedule.subjectStatus[subjectKey(subject)])).length;
+            return { total, completed, percentage: total ? Math.round(completed / total * 100) : 0 };
+        }
+
+        function updatePositionOptions() {
+            const filter = document.getElementById('positionFilter');
+            const selector = document.getElementById('modalPosition');
+            if (!filter || !selector) return;
+            const currentFilter = filter.value;
+            const currentPosition = selector.value;
+            filter.innerHTML = '<option value="">All positions</option>' + positions.map(position =>
+                `<option value="${escapeHtml(position)}">${escapeHtml(position)}</option>`
+            ).join('');
+            selector.innerHTML = positions.map(position =>
+                `<option value="${escapeHtml(position)}">${escapeHtml(position)}</option>`
+            ).join('');
+            filter.value = positions.includes(currentFilter) ? currentFilter : '';
+            selector.value = positions.includes(currentPosition) ? currentPosition : 'Other';
         }
 
         function formatDate(date) {
@@ -797,18 +867,21 @@
         window.clearFilters = function() {
             document.getElementById('searchInput').value = '';
             document.getElementById('subjectFilter').value = '';
+            document.getElementById('positionFilter').value = '';
             setWeekRange(0);
         }
 
         function renderSchedule() {
             const search = document.getElementById('searchInput').value.toLowerCase().trim();
             const subject = document.getElementById('subjectFilter').value;
+            const position = document.getElementById('positionFilter').value;
             const filterFrom = document.getElementById('filterFrom').value;
             const filterTo = document.getElementById('filterTo').value;
 
             const filtered = scheduleData.map(normalizeSchedule).filter(item => {
                 const matchesSearch = item.name.toLowerCase().includes(search);
                 const matchesSubject = subject === '' || item.subjects.includes(subject);
+                const matchesPosition = position === '' || item.position === position;
                 const inRange = date => (!filterFrom || date >= filterFrom) && (!filterTo || date <= filterTo);
                 const overlapsRange = from => (!filterTo || from <= filterTo) && (!filterFrom || item.dateTo >= filterFrom);
                 let matchesDate = overlapsRange(item.dateFrom);
@@ -821,20 +894,24 @@
                         return individualDate && inRange(individualDate);
                     });
                 }
-                return matchesSearch && matchesSubject && matchesDate;
+                return matchesSearch && matchesSubject && matchesPosition && matchesDate;
             });
 
             document.getElementById('recordCount').innerText = `Showing ${filtered.length} of ${scheduleData.length}`;
             updateWeekLabel();
+            renderStatus(filtered);
 
             const tbody = document.getElementById('tableBody');
             const cardContainer = document.getElementById('cardViewContainer');
             const emptyState = document.getElementById('emptyState');
+            document.getElementById('tableViewContainer').classList.toggle('hidden', currentTab !== 'schedule' || currentView !== 'table');
+            cardContainer.classList.toggle('hidden', currentTab !== 'schedule' || currentView !== 'card');
+            document.getElementById('statusViewContainer').classList.toggle('hidden', currentTab !== 'status');
 
             if (filtered.length === 0) {
                 tbody.innerHTML = '';
                 cardContainer.innerHTML = '';
-                emptyState.classList.remove('hidden');
+                emptyState.classList.toggle('hidden', currentTab !== 'schedule');
                 return;
             } else {
                 emptyState.classList.add('hidden');
@@ -865,6 +942,7 @@
                             ${subjectDateLabel}
                         </div>`;
                 }).join('');
+                const stats = getCompletionStats(item);
                 const actionButtons = isAdmin ? `
                     <button data-action="postpone-all" data-id="${escapeHtml(item.id)}" class="p-1.5 text-amber-700 hover:text-amber-900 hover:bg-amber-50 rounded-lg transition" title="Postpone all subjects in this schedule">
                         <i class="fa-regular fa-calendar-plus text-xs"></i>
@@ -880,7 +958,11 @@
                 </td>`;
                 tableHtml += `
                     <tr class="hover:bg-slate-50/80 transition group">
-                        <td class="py-3 px-4 border-r border-slate-200 font-semibold text-slate-800">${escapeHtml(item.name)}</td>
+                        <td class="py-3 px-4 border-r border-slate-200">
+                            <div class="font-semibold text-slate-800">${escapeHtml(item.name)}</div>
+                            <div class="mt-1 text-xs font-semibold text-emerald-700">${stats.percentage}% complete · ${stats.completed}/${stats.total}</div>
+                        </td>
+                        <td class="py-3 px-4 border-r border-slate-200 text-sm">${escapeHtml(item.position)}</td>
                         <td class="py-3 px-4 border-r border-slate-200 text-sm">${formatDate(item.dateFrom)}</td>
                         <td class="py-3 px-4 border-r border-slate-200 text-sm">${formatDate(item.dateTo)}</td>
                         <td class="py-3 px-4 border-r border-slate-200"><div class="flex flex-col gap-2">${subjectItems || '<span class="text-slate-400 text-xs">No subjects</span>'}</div></td>
@@ -891,7 +973,11 @@
                 cardHtml += `
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between gap-4 hover:shadow-md transition">
                         <div class="flex justify-between items-start gap-2">
-                            <h3 class="text-base font-bold text-slate-900">${escapeHtml(item.name)}</h3>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">${escapeHtml(item.name)}</h3>
+                                <p class="mt-1 text-xs font-semibold text-emerald-700">${stats.percentage}% complete · ${stats.completed}/${stats.total}</p>
+                                <p class="mt-1 text-xs text-slate-500">${escapeHtml(item.position)}</p>
+                            </div>
                             ${isAdmin ? `<div class="flex items-center gap-1">${actionButtons}</div>` : ''}
                         </div>
 
@@ -907,6 +993,10 @@
             tbody.innerHTML = tableHtml;
             cardContainer.innerHTML = cardHtml;
             updateSubjectOptions();
+            updatePositionOptions();
+            document.getElementById('tableViewContainer').classList.toggle('hidden', currentTab !== 'schedule' || currentView !== 'table');
+            cardContainer.classList.toggle('hidden', currentTab !== 'schedule' || currentView !== 'card');
+            document.getElementById('statusViewContainer').classList.toggle('hidden', currentTab !== 'status');
             [tbody, cardContainer].forEach(container => {
                 container.onclick = event => {
                     const button = event.target.closest('button[data-action]');
@@ -921,6 +1011,71 @@
                     if (checkbox) toggleSubjectCompletion(checkbox.dataset.id, checkbox.dataset.subjectKey, checkbox.checked);
                 };
             });
+        }
+
+        function renderStatus(filteredSchedules) {
+            const ranked = filteredSchedules
+                .map(item => ({ ...item, stats: getCompletionStats(item) }))
+                .sort((a, b) => b.stats.percentage - a.stats.percentage
+                    || b.stats.completed - a.stats.completed
+                    || a.name.localeCompare(b.name));
+            const topPerformer = document.getElementById('topPerformer');
+            const statusEmptyState = document.getElementById('statusEmptyState');
+            const statusTableBody = document.getElementById('statusTableBody');
+            if (ranked.length === 0) {
+                topPerformer.innerText = 'No progress yet';
+                statusTableBody.innerHTML = '';
+                statusEmptyState.classList.remove('hidden');
+                return;
+            }
+
+            const leader = ranked[0];
+            topPerformer.innerText = leader.stats.completed > 0
+                ? `${leader.name} · ${leader.stats.percentage}% complete`
+                : 'No subjects completed yet';
+            statusEmptyState.classList.add('hidden');
+            let previousPercentage = null;
+            let currentRank = 0;
+            statusTableBody.innerHTML = ranked.map((item, index) => {
+                if (item.stats.percentage !== previousPercentage) currentRank = index + 1;
+                previousPercentage = item.stats.percentage;
+                const completionDetails = item.subjects.map(name => {
+                    const completion = item.subjectStatus[subjectKey(name)];
+                    return completion
+                        ? `<span class="inline-flex flex-col rounded-lg bg-emerald-50 px-2 py-1 text-xs text-emerald-800"><span><i class="fa-solid fa-check mr-1"></i>${escapeHtml(name)}</span><span class="mt-0.5 text-[10px]">${escapeHtml(formatTimestamp(completion.completedAt) || 'Completed')}</span></span>`
+                        : '';
+                }).filter(Boolean).join(' ');
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-4 font-bold text-indigo-700">#${currentRank}</td>
+                        <td class="py-3 px-4 font-semibold text-slate-800">${escapeHtml(item.name)}</td>
+                        <td class="py-3 px-4">${escapeHtml(item.position)}</td>
+                        <td class="py-3 px-4">
+                            <div class="flex items-center gap-2">
+                                <div class="h-2 w-24 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-emerald-500" style="width:${item.stats.percentage}%"></div></div>
+                                <span class="font-semibold text-emerald-700">${item.stats.percentage}%</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <p class="mb-1 text-xs font-medium text-slate-600">${item.stats.completed} of ${item.stats.total} complete</p>
+                            <div class="flex flex-wrap gap-1">${completionDetails || '<span class="text-xs text-slate-400">No subjects completed</span>'}</div>
+                        </td>
+                    </tr>`;
+            }).join('');
+        }
+
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            const onStatus = tab === 'status';
+            document.getElementById('scheduleTab').setAttribute('aria-selected', String(!onStatus));
+            document.getElementById('statusTab').setAttribute('aria-selected', String(onStatus));
+            document.getElementById('scheduleTab').className = `px-4 py-2.5 border-b-2 ${onStatus ? 'border-transparent text-slate-500 hover:text-indigo-700' : 'border-indigo-600 text-indigo-700'} text-sm font-semibold`;
+            document.getElementById('statusTab').className = `px-4 py-2.5 border-b-2 ${onStatus ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-indigo-700'} text-sm font-semibold`;
+            document.getElementById('tableViewContainer').classList.toggle('hidden', onStatus || currentView !== 'table');
+            document.getElementById('cardViewContainer').classList.toggle('hidden', onStatus || currentView !== 'card');
+            document.getElementById('statusViewContainer').classList.toggle('hidden', !onStatus);
+            document.getElementById('emptyState').classList.toggle('hidden', onStatus || scheduleData.length === 0);
+            renderSchedule();
         }
 
         async function toggleSubjectCompletion(scheduleId, key, completed) {
@@ -1045,16 +1200,17 @@
             const cardBtn = document.getElementById('cardViewBtn');
 
             if (view === 'table') {
-                tableContainer.classList.remove('hidden');
+                tableContainer.classList.toggle('hidden', currentTab !== 'schedule');
                 cardContainer.classList.add('hidden');
                 tableBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition bg-white text-indigo-700 shadow-sm flex items-center gap-1.5";
                 cardBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5";
             } else {
                 tableContainer.classList.add('hidden');
-                cardContainer.classList.remove('hidden');
+                cardContainer.classList.toggle('hidden', currentTab !== 'schedule');
                 cardBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition bg-white text-indigo-700 shadow-sm flex items-center gap-1.5";
                 tableBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5";
             }
+            renderSchedule();
         }
 
         window.openAddModal = function() {
@@ -1062,6 +1218,8 @@
             document.getElementById('modalTitle').innerText = 'Add Schedule';
             document.getElementById('editDocId').value = '';
             document.getElementById('modalName').value = '';
+            updatePositionOptions();
+            document.getElementById('modalPosition').value = 'Other';
             document.getElementById('modalDateFrom').value = '';
             document.getElementById('modalDateTo').value = '';
             selectedSubjects = [];
@@ -1078,6 +1236,8 @@
             document.getElementById('modalTitle').innerText = `Edit Schedule: ${schedule.name}`;
             document.getElementById('editDocId').value = record.id;
             document.getElementById('modalName').value = schedule.name;
+            updatePositionOptions();
+            document.getElementById('modalPosition').value = schedule.position;
             document.getElementById('modalDateFrom').value = schedule.dateFrom;
             document.getElementById('modalDateTo').value = schedule.dateTo;
             selectedSubjects = [...schedule.subjects];
@@ -1149,6 +1309,7 @@
                 ...(previous || {}),
                 id: docId,
                 name,
+                position: document.getElementById('modalPosition').value,
                 dateFrom,
                 dateTo,
                 subjects: [...selectedSubjects],
@@ -1248,6 +1409,7 @@
                     return {
                         id,
                         name: schedule.name.trim(),
+                        position: previous?.position || schedule.position,
                         dateFrom: schedule.dateFrom,
                         dateTo: schedule.dateTo,
                         subjects: schedule.subjects,

@@ -16,3 +16,5 @@ With these rules, any Google account that signs in can read schedules. Email/Pas
 - The default date range is the current Sunday–Saturday week. Use the week arrows or the name, subject, and date filters to find schedules.
 - Admins can check off each subject. All signed-in users can see its completion checkbox and completion timestamp; only the admin can change it.
 - Admins can postpone one subject to a later date or move the whole schedule (and all its subjects) to a later date range. Changes sync through Firestore.
+- Schedule records show each person's completion percentage across all their subjects. The **Status & Rankings** tab sorts the filtered people by percentage and shows completed subjects and timestamps.
+- Admins assign each person a Position: Overseer, (D)Overseer, Deacon, BCL, PBCL, Group Leader, Unit Leader, Co-Worker, Evangelist, Member, or Other. The Position filter applies to both Schedule and Status & Rankings.
