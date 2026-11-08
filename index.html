@@ -151,7 +151,7 @@
 
         <!-- Schedule Filters -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-            <div class="sm:col-span-2 lg:col-span-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div class="sm:col-span-2 lg:col-span-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Week view</p>
                     <p id="weekLabel" class="text-sm font-bold text-slate-800">This week</p>
@@ -177,6 +177,12 @@
                 <span class="sr-only">Filter by position</span>
                 <select id="positionFilter" onchange="filterData()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     <option value="">All positions</option>
+                </select>
+            </label>
+            <label>
+                <span class="sr-only">Filter by type</span>
+                <select id="typeFilter" onchange="filterData()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">All types</option>
                 </select>
             </label>
             <label>
@@ -208,11 +214,12 @@
         <!-- Desktop / Tablet Table View Container -->
         <div id="tableViewContainer" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
             <div class="overflow-x-auto max-h-[680px]">
-                <table class="w-full text-left border-collapse min-w-[850px]">
+                <table class="w-full text-left border-collapse min-w-[950px]">
                     <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-bold tracking-wider sticky top-0 z-20 border-b border-slate-200 shadow-sm">
                         <tr>
                             <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">Name</th>
                             <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">Position</th>
+                            <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">Type</th>
                             <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">From</th>
                             <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">To</th>
                             <th class="py-3.5 px-4 bg-slate-100 border-r border-slate-200">Subjects</th>
@@ -238,12 +245,13 @@
                 <p class="mt-1 text-xs text-slate-500">Completion percentages include every subject on each person’s schedule.</p>
             </div>
             <div class="overflow-x-auto max-h-[680px]">
-                <table class="w-full text-left border-collapse min-w-[760px]">
+                <table class="w-full text-left border-collapse min-w-[850px]">
                     <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-bold tracking-wider sticky top-0 z-20 border-b border-slate-200">
                         <tr>
                             <th class="py-3.5 px-4">Rank</th>
                             <th class="py-3.5 px-4">Name</th>
                             <th class="py-3.5 px-4">Position</th>
+                            <th class="py-3.5 px-4">Type</th>
                             <th class="py-3.5 px-4">Progress</th>
                             <th class="py-3.5 px-4">Completed subjects</th>
                         </tr>
@@ -292,6 +300,10 @@
                 <div>
                     <label for="modalPosition" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Position</label>
                     <select id="modalPosition" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></select>
+                </div>
+                <div>
+                    <label for="modalType" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Type</label>
+                    <select id="modalType" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></select>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -408,6 +420,7 @@
         const adminEmail = 'admin11008@gmail.com';
         const adminUid = '6NguI1ON0Dg95qeJNeXnbw2aRyX2';
         const positions = ['Overseer', '(D)Overseer', 'Deacon', 'BCL', 'PBCL', 'Group Leader', 'Unit Leader', 'Co-Worker', 'Evangelist', 'Member', 'Other'];
+        const scheduleTypes = Array.from({ length: 10 }, (_, index) => `Type ${index + 1}`);
         const firebaseConfig = {
             apiKey: "AIzaSyCGFYGJDBQeAkMUucaj4O0PWWPB03lL01Y",
             authDomain: "evaluation-dd0ff.firebaseapp.com",
@@ -497,6 +510,7 @@
         window.addEventListener('DOMContentLoaded', async () => {
             try {
                 updatePositionOptions();
+                updateTypeOptions();
                 setWeekRange(0);
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
@@ -679,14 +693,9 @@
 
         function getSlotBadge(val) {
             if (!val || val.trim() === '') return '';
-            let bg = 'bg-slate-100 text-slate-700 border-slate-200';
-            if (val.includes('పాపక్షమాపణ')) bg = 'bg-amber-50 text-amber-800 border-amber-200';
-            else if (val.includes('ప్రతీ')) bg = 'bg-emerald-50 text-emerald-800 border-emerald-200';
-            else if (val.includes('జీవ')) bg = 'bg-sky-50 text-sky-800 border-sky-200';
-            else if (val.includes('యెరూషలేము')) bg = 'bg-purple-50 text-purple-800 border-purple-200';
-            else if (val.includes('సిలువ') || val.includes('నిత్యజీవమునకు')) bg = 'bg-rose-50 text-rose-800 border-rose-200';
-            
-            return `<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-medium border ${bg} shadow-2xs">${escapeHtml(val)}</span>`;
+            const index = getAllSubjects().indexOf(val);
+            const hue = (((index < 0 ? 0 : index) * 137.508) % 360).toFixed(2);
+            return `<span style="background-color:hsl(${hue} 75% 92%);color:hsl(${hue} 55% 28%);border-color:hsl(${hue} 45% 78%)" class="inline-block px-2.5 py-1 rounded-lg text-xs font-medium border shadow-2xs">${escapeHtml(val)}</span>`;
         }
 
         function escapeHtml(str) {
@@ -699,6 +708,7 @@
                 ...item,
                 name: typeof item.name === 'string' ? item.name : '',
                 position: positions.includes(item.position) ? item.position : 'Other',
+                type: scheduleTypes.includes(item.type) ? item.type : 'Type 1',
                 dateFrom: item.dateFrom || '2026-11-09',
                 dateTo: item.dateTo || '2026-11-13',
                 subjects: Array.isArray(item.subjects)
@@ -739,6 +749,22 @@
             ).join('');
             filter.value = positions.includes(currentFilter) ? currentFilter : '';
             selector.value = positions.includes(currentPosition) ? currentPosition : 'Other';
+        }
+
+        function updateTypeOptions() {
+            const filter = document.getElementById('typeFilter');
+            const selector = document.getElementById('modalType');
+            if (!filter || !selector) return;
+            const currentFilter = filter.value;
+            const currentType = selector.value;
+            filter.innerHTML = '<option value="">All types</option>' + scheduleTypes.map(type =>
+                `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`
+            ).join('');
+            selector.innerHTML = scheduleTypes.map(type =>
+                `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`
+            ).join('');
+            filter.value = scheduleTypes.includes(currentFilter) ? currentFilter : '';
+            selector.value = scheduleTypes.includes(currentType) ? currentType : 'Type 1';
         }
 
         function formatDate(date) {
@@ -830,12 +856,16 @@
             setWeekRange(0);
         }
 
-        function updateSubjectOptions() {
-            const allSubjects = [...new Set([
+        function getAllSubjects() {
+            return [...new Set([
                 ...catalogSubjects,
                 ...subjectData,
                 ...scheduleData.flatMap(item => normalizeSchedule(item).subjects)
-            ])].sort((a, b) => a.localeCompare(b));
+            ])].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+        }
+
+        function updateSubjectOptions() {
+            const allSubjects = getAllSubjects();
             const filter = document.getElementById('subjectFilter');
             const select = document.getElementById('subjectSelect');
             if (!filter || !select) return;
@@ -869,6 +899,7 @@
             document.getElementById('searchInput').value = '';
             document.getElementById('subjectFilter').value = '';
             document.getElementById('positionFilter').value = '';
+            document.getElementById('typeFilter').value = '';
             setWeekRange(0);
         }
 
@@ -876,6 +907,7 @@
             const search = document.getElementById('searchInput').value.toLowerCase().trim();
             const subject = document.getElementById('subjectFilter').value;
             const position = document.getElementById('positionFilter').value;
+            const type = document.getElementById('typeFilter').value;
             const filterFrom = document.getElementById('filterFrom').value;
             const filterTo = document.getElementById('filterTo').value;
 
@@ -883,6 +915,7 @@
                 const matchesSearch = item.name.toLowerCase().includes(search);
                 const matchesSubject = subject === '' || item.subjects.includes(subject);
                 const matchesPosition = position === '' || item.position === position;
+                const matchesType = type === '' || item.type === type;
                 const inRange = date => (!filterFrom || date >= filterFrom) && (!filterTo || date <= filterTo);
                 const overlapsRange = from => (!filterTo || from <= filterTo) && (!filterFrom || item.dateTo >= filterFrom);
                 let matchesDate = overlapsRange(item.dateFrom);
@@ -895,7 +928,7 @@
                         return individualDate && inRange(individualDate);
                     });
                 }
-                return matchesSearch && matchesSubject && matchesPosition && matchesDate;
+                return matchesSearch && matchesSubject && matchesPosition && matchesType && matchesDate;
             });
 
             document.getElementById('recordCount').innerText = `Showing ${filtered.length} of ${scheduleData.length}`;
@@ -967,6 +1000,7 @@
                             <div class="mt-1 text-xs font-semibold text-emerald-700">${stats.percentage}% complete · ${stats.completed}/${stats.total}</div>
                         </td>
                         <td class="py-3 px-4 border-r border-slate-200 text-sm">${escapeHtml(item.position)}</td>
+                        <td class="py-3 px-4 border-r border-slate-200 text-sm">${escapeHtml(item.type)}</td>
                         <td class="py-3 px-4 border-r border-slate-200 text-sm">${formatDate(item.dateFrom)}</td>
                         <td class="py-3 px-4 border-r border-slate-200 text-sm">${formatDate(item.dateTo)}</td>
                         <td class="py-3 px-4 border-r border-slate-200"><div class="flex flex-col gap-2">${subjectItems || '<span class="text-slate-400 text-xs">No subjects</span>'}</div></td>
@@ -981,6 +1015,7 @@
                                 <h3 class="text-base font-bold text-slate-900">${escapeHtml(item.name)}</h3>
                                 <p class="mt-1 text-xs font-semibold text-emerald-700">${stats.percentage}% complete · ${stats.completed}/${stats.total}</p>
                                 <p class="mt-1 text-xs text-slate-500">${escapeHtml(item.position)}</p>
+                                <p class="mt-1 text-xs text-indigo-600">${escapeHtml(item.type)}</p>
                             </div>
                             ${isAdmin ? `<div class="flex items-center gap-1">${actionButtons}</div>` : ''}
                         </div>
@@ -998,6 +1033,7 @@
             cardContainer.innerHTML = cardHtml;
             updateSubjectOptions();
             updatePositionOptions();
+            updateTypeOptions();
             document.getElementById('tableViewContainer').classList.toggle('hidden', currentTab !== 'schedule' || currentView !== 'table');
             cardContainer.classList.toggle('hidden', currentTab !== 'schedule' || currentView !== 'card');
             document.getElementById('statusViewContainer').classList.toggle('hidden', currentTab !== 'status');
@@ -1055,6 +1091,7 @@
                         <td class="py-3 px-4 font-bold text-indigo-700">#${currentRank}</td>
                         <td class="py-3 px-4 font-semibold text-slate-800">${escapeHtml(item.name)}</td>
                         <td class="py-3 px-4">${escapeHtml(item.position)}</td>
+                        <td class="py-3 px-4">${escapeHtml(item.type)}</td>
                         <td class="py-3 px-4">
                             <div class="flex items-center gap-2">
                                 <div class="h-2 w-24 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-emerald-500" style="width:${item.stats.percentage}%"></div></div>
@@ -1226,6 +1263,8 @@
             document.getElementById('modalName').value = '';
             updatePositionOptions();
             document.getElementById('modalPosition').value = 'Other';
+            updateTypeOptions();
+            document.getElementById('modalType').value = 'Type 1';
             document.getElementById('modalDateFrom').value = '';
             document.getElementById('modalDateTo').value = '';
             selectedSubjects = [];
@@ -1245,6 +1284,8 @@
             document.getElementById('modalName').value = schedule.name;
             updatePositionOptions();
             document.getElementById('modalPosition').value = schedule.position;
+            updateTypeOptions();
+            document.getElementById('modalType').value = schedule.type;
             document.getElementById('modalDateFrom').value = schedule.dateFrom;
             document.getElementById('modalDateTo').value = schedule.dateTo;
             selectedSubjects = [...schedule.subjects];
@@ -1269,6 +1310,8 @@
             document.getElementById('modalName').value = `${schedule.name} (Copy)`;
             updatePositionOptions();
             document.getElementById('modalPosition').value = schedule.position;
+            updateTypeOptions();
+            document.getElementById('modalType').value = schedule.type;
             document.getElementById('modalDateFrom').value = schedule.dateFrom;
             document.getElementById('modalDateTo').value = schedule.dateTo;
             selectedSubjects = [...schedule.subjects];
@@ -1343,6 +1386,7 @@
                 id: docId,
                 name,
                 position: document.getElementById('modalPosition').value,
+                type: document.getElementById('modalType').value,
                 dateFrom,
                 dateTo,
                 subjects: [...selectedSubjects],
@@ -1443,6 +1487,7 @@
                         id,
                         name: schedule.name.trim(),
                         position: previous?.position || schedule.position,
+                        type: previous?.type || schedule.type,
                         dateFrom: schedule.dateFrom,
                         dateTo: schedule.dateTo,
                         subjects: schedule.subjects,
