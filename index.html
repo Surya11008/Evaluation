@@ -159,11 +159,6 @@
                 <button type="button" onclick="changeWeek(1)" class="h-7 w-7 rounded-lg text-slate-500 hover:bg-white hover:text-indigo-700" aria-label="Next week" title="Next week"><i class="fa-solid fa-chevron-right text-xs"></i></button>
             </div>
             <label class="relative w-36 sm:w-40">
-                <span class="sr-only">Search schedules by name</span>
-                <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-slate-400" aria-hidden="true"></i>
-                <input type="search" id="searchInput" oninput="filterData()" placeholder="Name" title="Search by name" class="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pl-7 pr-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </label>
-            <label class="relative w-36 sm:w-40">
                 <span class="sr-only">Filter by subject</span>
                 <i class="fa-solid fa-book-open pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-slate-400" aria-hidden="true"></i>
                 <select id="subjectFilter" onchange="filterData()" title="Filter by subject" class="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 py-1 pl-7 pr-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -198,11 +193,18 @@
                     <input type="date" id="filterTo" onchange="filterData()" aria-label="To date" title="To date" class="h-7 w-[124px] rounded-lg border border-transparent bg-transparent px-1 text-[11px] focus:border-indigo-300 focus:bg-white focus:outline-none">
                 </label>
             </div>
-            <div class="ml-auto flex h-9 items-center gap-2">
-                <span id="recordCount" class="whitespace-nowrap rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-500">Loading schedules...</span>
-                <div class="flex rounded-xl border border-slate-200 bg-slate-100 p-0.5">
-                    <button onclick="switchView('table')" id="tableViewBtn" class="h-8 w-8 rounded-lg text-xs font-semibold bg-white text-indigo-700 shadow-sm" aria-label="Table view" title="Table view"><i class="fa-solid fa-table"></i></button>
-                    <button onclick="switchView('card')" id="cardViewBtn" class="h-8 w-8 rounded-lg text-xs font-semibold text-slate-600" aria-label="Card view" title="Card view"><i class="fa-solid fa-id-card"></i></button>
+            <div class="basis-full flex items-center justify-between gap-2">
+                <label class="relative w-36 sm:w-40">
+                    <span class="sr-only">Search schedules by name</span>
+                    <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-slate-400" aria-hidden="true"></i>
+                    <input type="search" id="searchInput" oninput="filterData()" placeholder="Name" title="Search by name" class="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pl-7 pr-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </label>
+                <div class="flex h-9 items-center gap-2">
+                    <span id="recordCount" class="whitespace-nowrap rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-500">Loading schedules...</span>
+                    <div class="flex rounded-xl border border-slate-200 bg-slate-100 p-0.5">
+                        <button onclick="switchView('table')" id="tableViewBtn" class="h-8 w-8 rounded-lg text-xs font-semibold bg-white text-indigo-700 shadow-sm" aria-label="Table view" title="Table view"><i class="fa-solid fa-table"></i></button>
+                        <button onclick="switchView('card')" id="cardViewBtn" class="h-8 w-8 rounded-lg text-xs font-semibold text-slate-600" aria-label="Card view" title="Card view"><i class="fa-solid fa-id-card"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
